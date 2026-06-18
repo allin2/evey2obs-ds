@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI 多源内容总结与知识沉淀工具 - 产品需求文档</title>
+  <style>
+    :root {
+      --ink: #17212b;
+      --muted: #5f6b76;
+      --line: #dce2e7;
+      --surface: #ffffff;
+      --surface-soft: #f5f7f8;
+      --accent: #087f5b;
+      --accent-soft: #e8f5f0;
+      --warning: #9a6700;
+      --warning-soft: #fff8dd;
+      --danger: #b42318;
+      --danger-soft: #fff0ee;
+      --blue: #175cd3;
+      --blue-soft: #eff4ff;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--surface-soft);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      line-height: 1.7;
+    }
+    a { color: var(--blue); }
+    .layout {
+      display: grid;
+      grid-template-columns: 250px minmax(0, 900px);
+      gap: 32px;
+      max-width: 1230px;
+      margin: 0 auto;
+      padding: 32px 24px 72px;
+    }
+    .sidebar {
+      position: sticky;
+      top: 20px;
+      align-self: start;
+      max-height: calc(100vh - 40px);
+      overflow: auto;
+      padding: 18px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    .sidebar strong { display: block; margin-bottom: 10px; }
+    .sidebar a {
+      display: block;
+      padding: 5px 0;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .sidebar a:hover { color: var(--accent); }
+    main {
+      min-width: 0;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 44px 52px 64px;
+    }
+    h1, h2, h3 { line-height: 1.3; }
+    h1 { margin: 0 0 14px; font-size: 34px; }
+    h2 {
+      margin: 48px 0 16px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid var(--line);
+      font-size: 24px;
+    }
+    h3 { margin: 30px 0 10px; font-size: 18px; }
+    p { margin: 10px 0; }
+    ul, ol { padding-left: 22px; }
+    li { margin: 5px 0; }
+    code {
+      padding: 2px 5px;
+      background: #eef1f3;
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.92em;
+    }
+    pre {
+      overflow-x: auto;
+      padding: 16px;
+      background: #111820;
+      color: #e8edf2;
+      border-radius: 6px;
+      line-height: 1.55;
+    }
+    pre code { padding: 0; background: transparent; color: inherit; }
+    table {
+      width: 100%;
+      margin: 14px 0 24px;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #f0f3f5; }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+      margin: 0 0 28px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .lead {
+      margin: 24px 0;
+      padding: 18px 20px;
+      background: var(--accent-soft);
+      border-left: 4px solid var(--accent);
+      font-size: 18px;
+    }
+    .callout {
+      margin: 18px 0;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-left-width: 4px;
+      border-radius: 6px;
+    }
+    .callout.info { background: var(--blue-soft); border-left-color: var(--blue); }
+    .callout.warning { background: var(--warning-soft); border-left-color: var(--warning); }
+    .callout.danger { background: var(--danger-soft); border-left-color: var(--danger); }
+    .tag {
+      display: inline-block;
+      margin: 1px 4px 1px 0;
+      padding: 2px 7px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: var(--surface);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .p0 { color: var(--danger); border-color: #f1a9a3; background: var(--danger-soft); }
+    .p1 { color: var(--warning); border-color: #e8cd79; background: var(--warning-soft); }
+    .p2 { color: var(--blue); border-color: #adc6f7; background: var(--blue-soft); }
+    .status-done { color: var(--accent); }
+    .status-partial { color: var(--warning); }
+    .status-todo { color: var(--muted); }
+    .flow {
+      margin: 18px 0;
+      padding: 18px;
+      text-align: center;
+      background: #f8fafb;
+      border: 1px dashed #aeb8c1;
+      border-radius: 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 14px;
+    }
+    .checklist { list-style: none; padding-left: 0; }
+    .checklist li::before { content: "□"; margin-right: 8px; color: var(--accent); }
+    .small { color: var(--muted); font-size: 13px; }
+    @media (max-width: 900px) {
+      .layout { display: block; padding: 0; }
+      .sidebar { display: none; }
+      main { border: 0; border-radius: 0; padding: 28px 20px 48px; }
+      h1 { font-size: 28px; }
+      table { display: block; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <nav class="sidebar" aria-label="文档目录">
+      <strong>文档目录</strong>
+      <a href="#summary">1. 项目摘要</a>
+      <a href="#context">2. 背景与现状</a>
+      <a href="#positioning">3. 产品定位</a>
+      <a href="#users">4. 用户与场景</a>
+      <a href="#scope">5. 范围与边界</a>
+      <a href="#platforms">6. 平台能力矩阵</a>
+      <a href="#flows">7. 核心用户流程</a>
+      <a href="#requirements">8. 功能需求</a>
+      <a href="#platform-rules">9. 平台专项规则</a>
+      <a href="#ux">10. 交互与界面</a>
+      <a href="#architecture">11. 技术架构</a>
+      <a href="#data">12. 数据与输出</a>
+      <a href="#nfr">13. 非功能需求</a>
+      <a href="#errors">14. 异常与降级</a>
+      <a href="#acceptance">15. 验收标准</a>
+      <a href="#roadmap">16. 迭代路线</a>
+      <a href="#risks">17. 风险与决策</a>
+      <a href="#definition-of-done">18. 完成定义</a>
+    </nav>
+
+    <main>
+      <header>
+        <h1>AI 多源内容总结与知识沉淀工具</h1>
+        <div class="meta">
+          <span>产品需求文档 PRD</span>
+          <span>版本：1.0</span>
+          <span>日期：2026-06-17</span>
+          <span>状态：已确认需求基线</span>
+          <span>项目：evey2obs-ds</span>
+        </div>
+        <div class="lead">
+          将 B站、YouTube、抖音、小红书、微信公众号和小宇宙的分享链接，统一转化为保留原文、可追溯、可直接写入 Obsidian 的结构化知识笔记。
+        </div>
+      </header>
+
+      <section id="summary">
+        <h2>1. 项目摘要</h2>
+        <p>
+          evey2obs-ds 是一个从零构建的多来源内容理解与知识沉淀工具。用户可以粘贴单个链接、整段分享口令或批量链接；系统自动识别来源，优先提取官方字幕或公开正文，必要时下载音频并本地转写，再由用户配置的大模型生成结构化总结，最终写入 Obsidian。
+        </p>
+        <h3>一句话定位</h3>
+        <p><strong>把散落在视频平台、公众号和本地文件中的内容，一键变成可信、结构化、可复用的个人知识笔记。</strong></p>
+        <h3>核心价值</h3>
+        <ul>
+          <li>减少观看长视频、反复拖动进度条和手工摘录的时间。</li>
+          <li>将不同平台内容统一为同一种笔记结构，降低整理成本。</li>
+          <li>保留原始链接、时间戳和提取方式，避免摘要失去来源。</li>
+          <li>本地优先处理音视频，大模型由用户自行配置，凭据不随内容输出。</li>
+          <li>只负责高质量沉淀到 Obsidian；检索、追问和持续整理由 Obsidian 及其插件完成。</li>
+        </ul>
+      </section>
+
+      <section id="context">
+        <h2>2. 背景与现状</h2>
+        <h3>2.1 新项目基线</h3>
+        <table>
+          <thead><tr><th>能力</th><th>状态</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>需求与验收基线</td><td class="status-done">已完成</td><td>六平台范围、用户流程、输出契约和验收条件已确认。</td></tr>
+            <tr><td>架构与实施计划</td><td class="status-done">已完成</td><td>已定义分层边界、平台适配器、任务队列、输出契约和分阶段路线。</td></tr>
+            <tr><td>Claude Code + DeepSeek V4 Pro</td><td class="status-done">已完成</td><td>项目指令、模型设置、规划/审查代理和 PRD 构建工作流已就绪。</td></tr>
+            <tr><td>业务功能</td><td class="status-todo">尚未实现</td><td>平台解析、转写、AI 总结、Obsidian 导出、GUI 和批量队列全部按本 PRD 从零实现。</td></tr>
+          </tbody>
+        </table>
+
+        <h3>2.2 设计前提</h3>
+        <ul>
+          <li>平台页面、字幕、媒体地址和风控规则会变化，所有平台实现必须独立适配且可替换。</li>
+          <li>小红书等平台的分享链可能包含访问 token 与追踪参数；请求可需使用 token，但日志和笔记必须脱敏。</li>
+          <li>微信公众号文章链接属于文章页面，应走 HTML 正文提取与图片理解，不应进入视频下载管线。</li>
+          <li>Whisper <code>tiny</code> 仅适合链路测试，对方言、背景音乐和低质量口播准确率不足；正式默认模型应为 <code>small</code>。</li>
+        </ul>
+
+        <div class="callout warning">
+          <strong>P0 依赖策略：</strong>yt-dlp 等平台提取依赖需要定期更新，不应长期锁定过期上限。新项目必须在引入平台能力时同时建立版本诊断与真实链接集成测试。
+        </div>
+      </section>
+
+      <section id="positioning">
+        <h2>3. 产品定位</h2>
+        <h3>3.1 产品形态</h3>
+        <p>首版是优先服务个人的本地桌面 GUI，保留 CLI 作为自动化和调试入口；安装、配置和交互不得假设用户是开发者，从架构上具备分发给其他人使用的能力。后续建立 Android 和 iOS 分享入口，复用统一任务协议和处理核心。</p>
+        <h3>3.2 产品原则</h3>
+        <ul>
+          <li><strong>统一入口：</strong>用户不需要先判断平台或内容类型。</li>
+          <li><strong>来源优先：</strong>摘要必须保留原始链接、平台、标题和提取方式。</li>
+          <li><strong>本地优先：</strong>转写和临时文件默认在本机处理；在线 AI 总结可关闭。</li>
+          <li><strong>渐进降级：</strong>字幕、正文、音频、缓存、本地文件应形成可解释的兜底链路。</li>
+          <li><strong>公开内容：</strong>不绕过付费、私密、DRM 或账号访问控制。</li>
+        </ul>
+        <h3>3.3 产品目标与成功指标</h3>
+        <table>
+          <thead><tr><th>目标</th><th>首版指标</th></tr></thead>
+          <tbody>
+            <tr><td>降低首次使用门槛</td><td>新用户在 15 分钟内完成模型、Obsidian 配置和首篇笔记导出。</td></tr>
+            <tr><td>覆盖核心来源</td><td>六个平台均通过公开真实样例验收，链接与整段分享文案均可识别。</td></tr>
+            <tr><td>稳定沉淀内容</td><td>成功任务 100% 生成包含原文、总结、关键观点、行动项和来源元数据的 Markdown。</td></tr>
+            <tr><td>保持可解释</td><td>所有失败任务均显示平台、失败阶段、原因和可执行的下一步。</td></tr>
+            <tr><td>保护本地隐私</td><td>API Key、Cookie 和分享追踪参数不进入笔记、普通日志或错误上报。</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="users">
+        <h2>4. 用户与使用场景</h2>
+        <table>
+          <thead><tr><th>用户</th><th>核心任务</th><th>典型场景</th></tr></thead>
+          <tbody>
+            <tr><td>知识管理用户</td><td>将碎片内容沉淀到 Obsidian</td><td>课程、访谈、公众号文章、短视频观点。</td></tr>
+            <tr><td>产品与技术人员</td><td>快速理解新工具和行业观点</td><td>YouTube 发布会、B站教程、X/小红书经验分享。</td></tr>
+            <tr><td>内容创作者</td><td>提取素材、观点和内容结构</td><td>抖音/小红书脚本、公众号长文、竞品内容。</td></tr>
+            <tr><td>研究与学习用户</td><td>获得全文、重点与可追问材料</td><td>课程笔记、主题资料库、行动项。</td></tr>
+          </tbody>
+        </table>
+        <h3>主要用户故事</h3>
+        <ul>
+          <li>作为用户，我粘贴一整段小红书分享口令，系统能自动找到短链并生成视频文字稿。</li>
+          <li>作为用户，我粘贴抖音分享链接，系统能提取口播并生成结构化摘要。</li>
+          <li>作为用户，我粘贴微信公众号文章，系统能提取正文和关键图片信息，而不是尝试下载视频。</li>
+          <li>作为用户，当平台链接解析失败时，我可以导入本地音视频继续处理。</li>
+          <li>作为用户，我可以看到当前处理阶段、失败原因和可执行的解决方案。</li>
+        </ul>
+      </section>
+
+      <section id="scope">
+        <h2>5. 范围与边界</h2>
+        <h3>5.1 本期目标</h3>
+        <ul>
+          <li>支持纯 URL、Markdown 链接、平台完整分享文案和多链接批量粘贴。</li>
+          <li>稳定支持 B站、YouTube、抖音、小红书、微信公众号和小宇宙六个平台的公开内容。</li>
+          <li>新增本地音频/视频导入作为平台解析失败的稳定兜底。</li>
+          <li>保存清洗后的原始正文或完整转写、原文图片、AI 摘要、关键观点、行动项和来源元数据。</li>
+          <li>统一生成结构化 JSON 与 Markdown，并将 Obsidian Vault 作为核心导出目标。</li>
+          <li>提供单任务与批量队列，展示每项任务的进度、结果和失败原因。</li>
+          <li>建立平台适配器和统一内容模型，降低后续新增来源的维护成本。</li>
+        </ul>
+        <h3>5.2 暂不承诺</h3>
+        <ul>
+          <li>私密、好友可见、付费、会员、已删除或需要额外授权的内容。</li>
+          <li>批量爬取账号历史内容、绕过平台频率限制或长期维护强爬虫。</li>
+          <li>抖音直播、小红书直播、微信视频号直播的自动抓取。</li>
+          <li>图片 OCR 和完整视频视觉理解；首版保存原文图片并预留处理接口，不承诺识别图内文字。</li>
+          <li>多人协作、云端账号体系和商业化计费。</li>
+          <li>内建向量检索、知识库问答或笔记长期整理；这些能力由 Obsidian 插件承接。</li>
+        </ul>
+      </section>
+
+      <section id="platforms">
+        <h2>6. 平台能力矩阵</h2>
+        <table>
+          <thead>
+            <tr><th>来源</th><th>输入</th><th>首选提取路径</th><th>兜底</th><th>目标优先级</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>B站</td><td>BV号、完整链接、分享文案</td><td>官方字幕</td><td>音频 + Whisper；本地文件</td><td><span class="tag p0">P0</span></td></tr>
+            <tr><td>YouTube</td><td>完整链接、短链</td><td>字幕/自动字幕</td><td>低清 HTTPS 视频 + Whisper；缓存</td><td><span class="tag p0">P0</span></td></tr>
+            <tr><td>抖音</td><td>分享短链、完整链接、分享文案</td><td>平台字幕（如可用）</td><td>音频 + Whisper；Cookie；本地文件</td><td><span class="tag p0">P0</span></td></tr>
+            <tr><td>小红书视频</td><td>App 分享短链/完整带 token 链接</td><td>平台字幕（如可用）</td><td>保留 token 解析媒体，音频 + Whisper</td><td><span class="tag p0">P0</span></td></tr>
+            <tr><td>小红书图文</td><td>App 分享链接</td><td>页面标题、正文、图片</td><td>保存原文图片；首版不做 OCR</td><td><span class="tag p0">P0</span></td></tr>
+            <tr><td>微信公众号</td><td><code>mp.weixin.qq.com</code> 文章链接</td><td>HTML 正文与元数据解析</td><td>浏览器渲染；用户复制全文</td><td><span class="tag p0">P0</span></td></tr>
+            <tr><td>小宇宙</td><td>单集分享链接、分享文案</td><td>节目简介与官方文稿（如可用）</td><td>节目音频 + Whisper</td><td><span class="tag p0">P0</span></td></tr>
+            <tr><td>本地音视频</td><td>MP3、M4A、WAV、MP4、MOV、MKV</td><td>ffmpeg + Whisper</td><td>格式转换提示</td><td><span class="tag p0">P0</span></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="flows">
+        <h2>7. 核心用户流程</h2>
+        <h3>7.1 统一链接流程</h3>
+        <div class="flow">
+          首次配置模型与 Obsidian → 粘贴单个/批量链接或分享文案<br>
+          → URL 提取 → 平台与内容类型识别 → 元数据预检<br>
+          → 官方字幕/正文优先 → 音频 + Whisper 兜底 → AI 总结<br>
+          → 写入 Obsidian → 清理临时音视频
+        </div>
+        <ol>
+          <li>用户粘贴纯链接、Markdown 链接或完整分享口令。</li>
+          <li>系统提取第一个受支持 URL，显示识别到的平台。</li>
+          <li>系统解析短链，但保留平台访问所需的全部查询参数。</li>
+          <li>系统选择内容处理器：视频、文章或本地文件。</li>
+          <li>批量输入拆分为独立任务入队，单项失败不中断其他任务。</li>
+          <li>处理完成后展示标题、全文/文字稿、摘要、来源和导出位置，然后清理临时音视频。</li>
+        </ol>
+        <h3>7.2 链接失败兜底</h3>
+        <div class="flow">
+          链接解析失败 → 判断原因 → Cookie/重新复制分享链接/本地文件导入<br>
+          → 继续处理，不要求用户重新配置全部选项
+        </div>
+      </section>
+
+      <section id="requirements">
+        <h2>8. 功能需求</h2>
+        <table>
+          <thead><tr><th>ID</th><th>优先级</th><th>需求</th><th>验收要点</th></tr></thead>
+          <tbody>
+            <tr><td>FR-001</td><td><span class="tag p0">P0</span></td><td>统一输入解析</td><td>从纯 URL、Markdown 链接和整段分享文案中提取 URL；空输入和多 URL 给出明确提示。</td></tr>
+            <tr><td>FR-002</td><td><span class="tag p0">P0</span></td><td>来源与类型识别</td><td>识别 B站、YouTube、抖音、小红书、微信公众号、小宇宙和本地文件；输出 <code>source_type</code> 与 <code>content_type</code>。</td></tr>
+            <tr><td>FR-003</td><td><span class="tag p0">P0</span></td><td>短链解析</td><td>跟随有限次重定向；保留 token；防止重定向到本机和私有网络。</td></tr>
+            <tr><td>FR-004</td><td><span class="tag p0">P0</span></td><td>视频元数据</td><td>提取标题、作者、时长、发布时间、描述、原始链接和平台。</td></tr>
+            <tr><td>FR-005</td><td><span class="tag p0">P0</span></td><td>最小媒体下载</td><td>仅当字幕或正文不可用时下载可转写的音频或最小媒体，不默认下载高清视频。</td></tr>
+            <tr><td>FR-006</td><td><span class="tag p0">P0</span></td><td>官方字幕优先</td><td>存在可靠官方字幕或平台文稿时跳过媒体下载；不可用时自动下载音频并转 Whisper。</td></tr>
+            <tr><td>FR-007</td><td><span class="tag p0">P0</span></td><td>本地文件导入</td><td>GUI 和 CLI 均可处理本地音视频；不经过 yt-dlp。</td></tr>
+            <tr><td>FR-008</td><td><span class="tag p0">P0</span></td><td>Whisper 转写</td><td>输出全文和时间戳；默认 small；模型首次下载有明确提示。</td></tr>
+            <tr><td>FR-009</td><td><span class="tag p0">P0</span></td><td>公众号正文解析</td><td>提取标题、公众号、作者、发布时间、正文、封面、正文图片和原始链接；正文转 Markdown。</td></tr>
+            <tr><td>FR-010</td><td><span class="tag p0">P0</span></td><td>图片保存</td><td>下载公众号和小红书正文图片到笔记附件目录，Markdown 使用 Obsidian 可识别的相对路径；首版不做 OCR。</td></tr>
+            <tr><td>FR-011</td><td><span class="tag p0">P0</span></td><td>结构化总结</td><td>支持通用、课程、会议模板；新增短视频与文章模板。</td></tr>
+            <tr><td>FR-012</td><td><span class="tag p0">P0</span></td><td>来源可追溯</td><td>Markdown frontmatter 包含平台、原始链接、作者、提取方式和创建时间。</td></tr>
+            <tr><td>FR-013</td><td><span class="tag p0">P0</span></td><td>Obsidian 导出</td><td>生成 JSON 与 Markdown，写入用户选定的 Vault/子目录；路径不可用时保留本地结果并提示重试。</td></tr>
+            <tr><td>FR-014</td><td><span class="tag p0">P0</span></td><td>缓存与幂等</td><td>相同内容默认复用转录；用户可选择强制重新处理。</td></tr>
+            <tr><td>FR-015</td><td><span class="tag p0">P0</span></td><td>自动清理</td><td>任务成功且文本与图片导出完整后，自动删除下载的音频、视频和临时切片；失败文件按诊断保留期限清理。</td></tr>
+            <tr><td>FR-016</td><td><span class="tag p0">P0</span></td><td>进度与取消</td><td>展示解析、下载、转写、总结、导出阶段；用户可取消未完成任务。</td></tr>
+            <tr><td>FR-017</td><td><span class="tag p0">P0</span></td><td>认证配置</td><td>仅在确有需要时提示 Cookie；访问浏览器 Cookie 前必须获得用户明确授权。</td></tr>
+            <tr><td>FR-018</td><td><span class="tag p1">P1</span></td><td>视觉信息扩展</td><td>为视频关键帧 OCR 和多模态理解预留处理器接口。</td></tr>
+            <tr><td>FR-019</td><td><span class="tag p0">P0</span></td><td>大模型配置</td><td>用户可设置 Base URL、API Key、模型名和协议类型；提供连接测试；密钥使用系统安全存储或环境变量，界面不回显明文。</td></tr>
+            <tr><td>FR-020</td><td><span class="tag p0">P0</span></td><td>批量任务队列</td><td>同时支持单链接和多链接输入；每项显示排队、解析、提取、转写、总结、导出、成功或失败状态，支持取消和单项重试。</td></tr>
+            <tr><td>FR-021</td><td><span class="tag p0">P0</span></td><td>小宇宙单集处理</td><td>提取节目标题、播客名、主播/嘉宾、发布时间、简介、时长、封面与音频；官方文稿不可用时转 Whisper。</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="platform-rules">
+        <h2>9. 平台专项规则</h2>
+        <h3>9.1 小红书</h3>
+        <ul>
+          <li>优先接受 App 复制的 <code>xhslink.com</code> 分享短链。</li>
+          <li>短链跳转后的 <code>xsec_token</code>、<code>type</code> 等参数必须用于本次抓取，不能在请求前清理。</li>
+          <li>缓存键使用笔记 ID；抓取 URL 与缓存键分离，避免把分享追踪参数写入文件名。</li>
+          <li>分享链接可能包含 <code>share_id</code>、<code>shareRedId</code>、<code>appuid</code> 等追踪标识；日志和导出文件默认不保存这些参数。</li>
+          <li>yt-dlp 失败时，可读取公开页面中的 <code>window.__INITIAL_STATE__</code>，提取标题、描述和 H.264 <code>masterUrl</code>。</li>
+          <li>裸笔记链接缺少 token 时，提示“请从小红书 App 重新复制分享链接”，不直接要求账号 Cookie。</li>
+          <li>媒体签名 URL 可能过期，应在解析后立即下载，不长期保存下载地址。</li>
+        </ul>
+
+        <h3>9.2 抖音</h3>
+        <ul>
+          <li>支持 <code>v.douyin.com</code>、<code>douyin.com/video</code> 和整段复制口令。</li>
+          <li>首选音频或低体积媒体；保留标题、作者、时长和描述。</li>
+          <li>游客态失败时才提示 Cookie 或本地文件导入。</li>
+          <li>背景音乐占主导、无人声或方言场景应提示“文字稿可能不可靠”。</li>
+        </ul>
+
+        <h3>9.3 微信公众号</h3>
+        <ul>
+          <li>仅处理 <code>https://mp.weixin.qq.com/</code> 的公开文章链接。</li>
+          <li>优先直接 HTTP 获取；必要时使用浏览器渲染，但不读取用户微信登录态。</li>
+          <li>正文提取优先选择 <code>#js_content</code> 或 <code>.rich_media_content</code>，标题和作者使用结构化元数据与 DOM 双重兜底。</li>
+          <li>处理懒加载图片的 <code>data-src</code>；保留正文内链接、列表、引用和表格。</li>
+          <li>验证码、已删除、违规或仅微信内可见文章必须明确标记，不尝试绕过访问控制。</li>
+          <li>默认保存清洗后的完整正文、图片、AI 摘要、关键观点、行动项和原文链接。</li>
+        </ul>
+
+        <h3>9.4 小宇宙</h3>
+        <ul>
+          <li>首版仅处理公开单集分享链接，不批量抓取播客全部历史节目。</li>
+          <li>优先提取节目简介、show notes 和平台提供的官方文稿；无可用文稿时下载音频并使用 Whisper。</li>
+          <li>音频下载必须显示已下载大小、总大小、速度和预计剩余时间。</li>
+          <li>节目处理完成并成功导出后删除下载音频，保留完整转写和分段时间戳。</li>
+        </ul>
+      </section>
+
+      <section id="ux">
+        <h2>10. 交互与界面需求</h2>
+        <h3>10.1 主界面</h3>
+        <ul>
+          <li>输入框名称由“视频链接”改为“链接或分享口令”。</li>
+          <li>输入框支持换行粘贴多个链接；提交前显示已识别条数和重复项。</li>
+          <li>提供“选择本地文件”按钮，与链接入口并列。</li>
+          <li>粘贴后实时显示平台图标/文字、内容类型和解析状态。</li>
+          <li>主界面可选总结模板和 Obsidian 子目录；模型连接与 Vault 位置在“设置”中统一管理。</li>
+          <li>Cookie 配置放入“高级设置”，避免给普通用户造成前置负担。</li>
+        </ul>
+        <h3>10.2 首次配置</h3>
+        <ol>
+          <li>设置大模型协议、Base URL、API Key 和模型名，点击“测试连接”后才标记为可用。</li>
+          <li>选择 Obsidian Vault 与默认子目录，系统验证路径可写并生成一篇可删除的测试笔记。</li>
+          <li>选择 Whisper 模型，建议默认 <code>small</code>；清楚展示首次下载所需空间。</li>
+          <li>完成后进入主界面，配置可随时修改，不与单个任务绑定。</li>
+        </ol>
+        <h3>10.3 任务队列与状态</h3>
+        <p>任务必须使用稳定阶段，不以原始第三方日志作为唯一反馈：</p>
+        <pre><code>正在识别来源
+正在解析分享链接
+正在获取字幕/正文/音频
+正在转写 3/8
+正在生成总结
+正在导出到 Obsidian
+处理完成 / 已取消 / 处理失败</code></pre>
+        <ul>
+          <li>队列列表固定展示标题/链接、平台、当前阶段、总进度、耗时和操作。</li>
+          <li>下载阶段展示百分比、速度和 ETA；转写阶段展示已处理时长/总时长。</li>
+          <li>用户可取消单项、重试失败项或清理已完成记录。</li>
+        </ul>
+        <h3>10.4 结果页</h3>
+        <ul>
+          <li>展示标题、平台、作者、来源链接、提取方式、全文和摘要。</li>
+          <li>提供打开 Markdown、复制摘要、打开原文、打开 Obsidian 四个动作。</li>
+          <li>展示准确性提示，例如“来自自动字幕”“来自 Whisper tiny”“仅提取文章正文”。</li>
+        </ul>
+      </section>
+
+      <section id="architecture">
+        <h2>11. 技术架构建议</h2>
+        <div class="flow">
+          InputParser → SourceResolver → SourceAdapter → NormalizedDocument<br>
+          → Transcript/OCR Processor → Summarizer → Exporter → Cleanup
+        </div>
+        <h3>11.1 建议模块边界</h3>
+        <pre><code>app/
+  inputs.py                 # 分享文案、URL、本地文件解析
+  sources/
+    base.py                 # SourceAdapter 接口
+    bilibili.py
+    youtube.py
+    douyin.py
+    xiaohongshu.py
+    wechat_article.py
+    xiaoyuzhou.py
+    local_file.py
+  processors/
+    media.py                # ffmpeg、音频提取、切片
+    transcription.py        # Whisper
+    article_cleaner.py      # HTML → Markdown
+    image_ocr.py            # P1
+    summarization.py
+  models.py                 # NormalizedDocument/Transcript/Result
+  exporters/
+    markdown.py
+    obsidian.py
+  queue.py                  # 批量任务、状态、取消与重试
+  settings.py               # 模型、Whisper、Obsidian 与安全配置
+  pipeline.py               # 统一编排，不包含平台细节</code></pre>
+        <p class="small">该目录是从零建议的模块边界；实施时按小步可测试切片逐步创建。</p>
+
+        <h3>11.2 客户端与移动端演进</h3>
+        <ul>
+          <li>GUI 和 CLI 只调用统一的应用服务层，不直接组装 yt-dlp、Whisper 或导出逻辑。</li>
+          <li>任务输入、进度事件和结果使用稳定的结构化模型，为 Android/iOS 分享扩展复用。</li>
+          <li>首版不引入云端账号系统；移动端方案可在本地处理与用户自托管处理节点之间另行评估。</li>
+        </ul>
+
+        <h3>11.3 处理策略</h3>
+        <table>
+          <thead><tr><th>内容类型</th><th>标准化输入</th><th>处理器</th></tr></thead>
+          <tbody>
+            <tr><td>视频</td><td>元数据 + 字幕或本地媒体</td><td>字幕解析或 Whisper</td></tr>
+            <tr><td>音频</td><td>元数据 + 本地音频</td><td>Whisper</td></tr>
+            <tr><td>文章</td><td>元数据 + Markdown 正文 + 图片</td><td>正文清洗 + 可选 OCR</td></tr>
+            <tr><td>图文笔记</td><td>描述 + 原文图片</td><td>正文清洗 + 图片存储 + 总结；OCR 为后续增强</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="data">
+        <h2>12. 数据模型与输出</h2>
+        <h3>12.1 统一内容模型</h3>
+        <pre><code>{
+  "id": "platform-content-id",
+  "source_type": "xiaohongshu",
+  "content_type": "video",
+  "source_url": "原始分享链接",
+  "canonical_url": "去除敏感追踪参数后的规范链接",
+  "title": "内容标题",
+  "author": "公开作者名",
+  "published_at": "ISO-8601 or null",
+  "duration_seconds": 381.458,
+  "description": "平台描述",
+  "extraction_method": "yt_dlp|subtitle|whisper|html|ocr|cache",
+  "text": "正文或转录全文",
+  "segments": [],
+  "images": [],
+  "summary": "AI 摘要",
+  "key_points": [],
+  "action_items": [],
+  "tags": [],
+  "warnings": []
+}</code></pre>
+        <h3>12.2 Markdown 输出结构</h3>
+        <pre><code>---
+title: 标题
+source: 原始链接
+platform: xiaohongshu
+content_type: video
+author: 作者
+extraction_method: whisper
+published: 2026-06-17
+created: 2026-06-17T20:00:00+08:00
+tags: [AI, 视频笔记]
+---
+
+# 标题
+## 一句话总结
+## 核心要点
+## 详细笔记
+## 行动项
+## 时间轴 / 关键引用
+## 原始正文 / 完整转写
+## 原文图片
+## 来源与处理说明</code></pre>
+        <div class="callout info">
+          <strong>Obsidian 输出契约：</strong>每篇笔记必须保持稳定 frontmatter 字段和标题层级，便于 Dataview、全文检索和问答插件建立索引。附件使用 Vault 内相对路径，笔记移动后不应指向项目临时目录。
+        </div>
+        <h3>12.3 隐私字段</h3>
+        <p>以下字段不得写入 Markdown、普通日志或公开错误信息：</p>
+        <ul>
+          <li>API Key、Authorization、Cookie 内容。</li>
+          <li>小红书分享链接中的用户追踪参数。</li>
+          <li>浏览器 Cookie 数据库路径和解密结果。</li>
+        </ul>
+      </section>
+
+      <section id="nfr">
+        <h2>13. 非功能需求</h2>
+        <table>
+          <thead><tr><th>类别</th><th>要求</th></tr></thead>
+          <tbody>
+            <tr><td>兼容性</td><td>macOS Python 3.11+ 为首要开发环境；桌面程序为后续 Windows 打包保持路径和进程兼容；yt-dlp 版本保持可更新。</td></tr>
+            <tr><td>可靠性</td><td>相同任务可重复运行；失败不破坏已有输出；外部平台失败可降级。</td></tr>
+            <tr><td>性能</td><td>网络正常时，短链识别 3 秒内给出平台反馈；媒体下载和转写显示实时进度；批量队列默认串行执行重型转写，避免耗尽内存。</td></tr>
+            <tr><td>安全</td><td>URL 白名单、重定向限制、私网地址拦截、响应大小限制、文件路径清洗。</td></tr>
+            <tr><td>隐私</td><td>本地优先；不默认读取浏览器 Cookie；读取前明确说明风险并获得授权。</td></tr>
+            <tr><td>可维护性</td><td>平台适配器独立；第三方命令参数集中管理；错误码稳定。</td></tr>
+            <tr><td>可测试性</td><td>网络解析与业务编排分离；使用 HTML/JSON 固定夹具测试，不依赖每次联网。</td></tr>
+            <tr><td>可观测性</td><td>记录阶段、耗时、平台、提取方式和错误类别，不记录凭据。</td></tr>
+            <tr><td>资源管理</td><td>成功导出后必须清理临时音视频；启动时检查异常退出遗留的过期临时文件。</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="errors">
+        <h2>14. 异常、提示与降级</h2>
+        <table>
+          <thead><tr><th>错误码</th><th>场景</th><th>用户提示与处理</th></tr></thead>
+          <tbody>
+            <tr><td>INPUT_NO_URL</td><td>分享文案中没有链接</td><td>提示重新复制分享口令或选择本地文件。</td></tr>
+            <tr><td>SOURCE_UNSUPPORTED</td><td>平台未支持</td><td>显示已识别域名，允许转本地文件。</td></tr>
+            <tr><td>SHARE_TOKEN_MISSING</td><td>小红书裸链接无有效 token</td><td>提示从 App 重新执行“分享 → 复制链接”。</td></tr>
+            <tr><td>SHARE_TOKEN_EXPIRED</td><td>媒体签名过期</td><td>提示重新复制最新分享链接。</td></tr>
+            <tr><td>AUTH_REQUIRED</td><td>平台要求登录</td><td>解释 Cookie 风险，允许用户授权或选择 cookies.txt。</td></tr>
+            <tr><td>CONTENT_UNAVAILABLE</td><td>删除、私密、付费、违规</td><td>停止处理，不尝试绕过限制。</td></tr>
+            <tr><td>ARTICLE_CHALLENGE</td><td>公众号验证码</td><td>浏览器渲染或用户复制全文，不循环重试。</td></tr>
+            <tr><td>NO_SPEECH</td><td>视频无人声/纯音乐</td><td>输出低置信提示，不伪造完整摘要。</td></tr>
+            <tr><td>ASR_LOW_CONFIDENCE</td><td>方言、噪声、tiny 模型</td><td>建议 small/medium 或导入更清晰音频。</td></tr>
+            <tr><td>LLM_FAILED</td><td>模型服务失败</td><td>保留转录，使用本地模板生成笔记。</td></tr>
+            <tr><td>DISK_FULL</td><td>空间不足</td><td>下载前检查空间，提示切换清理策略。</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="acceptance">
+        <h2>15. 验收标准</h2>
+        <h3>15.1 通用验收</h3>
+        <ul class="checklist">
+          <li>纯 URL、Markdown 链接和完整分享文案均能正确提取链接。</li>
+          <li>GUI 与 CLI 使用同一条业务管线，结果一致。</li>
+          <li>大模型设置可测试，Obsidian Vault 路径可验证，配置错误不会启动批量任务。</li>
+          <li>批量粘贴至少 10 个链接时能正确入队，单项失败不中断队列，可单独重试。</li>
+          <li>每个成功任务生成结构化 JSON 与 Markdown，包含原文/完整转写、AI 摘要、关键观点、行动项、标签和可追溯来源。</li>
+          <li>图文内容的图片保存在 Vault 附件目录并可在 Obsidian 正常显示。</li>
+          <li>导出成功后临时音频、视频和分片全部清理，原文、图片和笔记不受影响。</li>
+          <li>任何错误都不会输出 API Key 或 Cookie。</li>
+          <li>所有单元测试、lint/语法检查通过。</li>
+        </ul>
+        <h3>15.2 平台验收</h3>
+        <table>
+          <thead><tr><th>平台</th><th>最低验收样例</th><th>通过条件</th></tr></thead>
+          <tbody>
+            <tr><td>B站</td><td>1 个公开中文视频</td><td>完成转录、总结、清理和导出。</td></tr>
+            <tr><td>YouTube</td><td>1 个有字幕、1 个无字幕视频</td><td>分别走字幕和 Whisper 路径。</td></tr>
+            <tr><td>抖音</td><td>1 条口播分享文案</td><td>自动提取短链，生成非空文字稿；正式验收使用 small。</td></tr>
+            <tr><td>小红书视频</td><td>1 条有效 App 分享短链</td><td>无 Cookie 条件下保留 token 并取得媒体；生成文字稿。</td></tr>
+            <tr><td>小红书异常</td><td>1 条无 token 裸链接</td><td>提示重新复制分享链接，不显示笼统堆栈。</td></tr>
+            <tr><td>微信公众号</td><td>1 篇纯文字、1 篇含图文章</td><td>正文完整、图片链接保留、摘要含来源。</td></tr>
+            <tr><td>小宇宙</td><td>1 集有平台文稿、1 集无文稿节目</td><td>分别走文稿和音频 + Whisper 路径，元数据完整，媒体成功清理。</td></tr>
+            <tr><td>本地文件</td><td>MP3 与 MP4 各 1 个</td><td>不联网下载媒体即可完成转写。</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="roadmap">
+        <h2>16. 迭代路线</h2>
+        <h3>阶段 A：基础架构与首次配置 <span class="tag p0">P0</span></h3>
+        <ul>
+          <li>修正 yt-dlp 依赖版本策略，增加启动时版本诊断。</li>
+          <li>新增统一输入解析、来源识别、内容类型识别。</li>
+          <li>建立 SourceAdapter 与 NormalizedDocument。</li>
+          <li>完成大模型连接测试、安全存储与 Obsidian Vault 写入验证。</li>
+          <li>从零实现 B站与 YouTube 字幕优先的最小端到端链路。</li>
+        </ul>
+
+        <h3>阶段 B：抖音与小红书视频 <span class="tag p0">P0</span></h3>
+        <ul>
+          <li>支持整段分享口令和短链。</li>
+          <li>实现音频优先下载与平台专项错误提示。</li>
+          <li>小红书增加 <code>__INITIAL_STATE__</code> 解析兜底与敏感参数脱敏。</li>
+          <li>加入真实链接集成测试，固定网络测试与单元测试分离。</li>
+        </ul>
+
+        <h3>阶段 C：微信公众号、小宇宙与批量队列 <span class="tag p0">P0</span></h3>
+        <ul>
+          <li>实现文章 HTML 抽取、Markdown 清洗与图片列表。</li>
+          <li>实现图片下载、Vault 附件管理与相对链接重写。</li>
+          <li>实现小宇宙元数据、官方文稿与音频转写适配器。</li>
+          <li>新增文章总结模板。</li>
+          <li>GUI 增加单链接/批量队列、单项取消与重试，并保留本地音视频入口。</li>
+          <li>完善来源元数据与 Obsidian frontmatter。</li>
+        </ul>
+
+        <h3>阶段 D：稳定发布与移动端验证 <span class="tag p1">P1</span></h3>
+        <ul>
+          <li>完成 macOS 可分发包、新手引导、隐私说明和失败诊断导出。</li>
+          <li>验证 Windows 打包和路径兼容，消除对本机绝对路径的依赖。</li>
+          <li>设计 Android/iOS 分享扩展的任务协议与最小原型。</li>
+        </ul>
+
+        <h3>阶段 E：多模态增强 <span class="tag p2">P2</span></h3>
+        <ul>
+          <li>公众号/小红书图文 OCR。</li>
+          <li>视频关键帧 OCR 和视觉要点。</li>
+          <li>基于用户选择的云端 ASR 或多模态模型提供可选增强，本地默认仍可用。</li>
+        </ul>
+      </section>
+
+      <section id="risks">
+        <h2>17. 风险与设计决策</h2>
+        <table>
+          <thead><tr><th>风险</th><th>影响</th><th>应对</th></tr></thead>
+          <tbody>
+            <tr><td>平台页面和提取器频繁变化</td><td>下载能力突然失效</td><td>保持 yt-dlp 更新；适配器隔离；本地文件兜底。</td></tr>
+            <tr><td>分享 token 和媒体签名过期</td><td>旧链接无法处理</td><td>立即解析下载；提示重新复制链接。</td></tr>
+            <tr><td>Whisper 小模型误识别</td><td>摘要建立在错误文本上</td><td>默认 small；输出模型与置信提示；无人声检测。</td></tr>
+            <tr><td>Cookie 涉及账号凭据</td><td>隐私和安全风险</td><td>默认不用；明确授权；本地读取；不写日志。</td></tr>
+            <tr><td>公众号反爬或验证码</td><td>正文提取失败</td><td>浏览器渲染或复制全文兜底，不绕过访问控制。</td></tr>
+            <tr><td>小宇宙公开接口或媒体地址变更</td><td>单集解析或下载失败</td><td>独立适配器、固定夹具测试、快速更新，并允许用户导入本地音频。</td></tr>
+            <tr><td>批量任务占用过多 CPU、内存和磁盘</td><td>界面卡顿或任务失败</td><td>重型转写默认串行，入队前检查磁盘，导出后即时清理。</td></tr>
+            <tr><td>版权与长期存储</td><td>内容使用边界不清</td><td>面向个人学习；保留来源；默认不公开再分发全文。</td></tr>
+          </tbody>
+        </table>
+
+        <h3>已确认决策</h3>
+        <ul>
+          <li>首版优先服务个人，但产品必须可安装、可配置、可分发给其他用户。</li>
+          <li>首版交付本地桌面 GUI 并保留 CLI；后续建设 Android 和 iOS App。</li>
+          <li>本项目写入 Obsidian，不内建检索、追问和持续知识整理能力。</li>
+          <li>六个平台全部属于首版功能范围，允许按阶段实现，发布前必须全部验收。</li>
+          <li>官方字幕或正文优先，音频 + Whisper 兜底；导出成功后自动清理临时音视频。</li>
+          <li>笔记保存完整原文/转写、原文图片、AI 摘要、关键观点、行动项和来源元数据；首版不做图片 OCR。</li>
+          <li>GUI 同时支持单链接与批量队列，每项拥有独立进度与失败原因。</li>
+        </ul>
+        <h3>建议默认值（非不可变需求）</h3>
+        <ul>
+          <li>Whisper 默认使用 <code>small</code>，用户可为性能或准确率改用其他模型。</li>
+          <li>批量队列默认单个重型转写任务运行，轻量解析可有限并发。</li>
+          <li>大模型使用全局默认配置，后续可增加单任务覆盖。</li>
+          <li>产品工作名使用 <code>evey2obs</code>，对外发布前可另行确定正式品牌名。</li>
+        </ul>
+      </section>
+
+      <section id="definition-of-done">
+        <h2>18. 完成定义</h2>
+        <p>本期需求只有在以下条件全部满足后才算完成：</p>
+        <ul class="checklist">
+          <li>六个平台和本地文件拥有明确、互相隔离的处理策略。</li>
+          <li>整段分享文案可以直接粘贴，无需用户手工裁剪 URL。</li>
+          <li>B站、YouTube、抖音、小红书、公众号和小宇宙均有真实公开样例验收记录。</li>
+          <li>单链接与批量队列可用，每项任务的进度、取消、失败原因和重试行为通过验收。</li>
+          <li>平台失败时提供可执行的下一步，不只显示第三方堆栈。</li>
+          <li>输出包含完整原文/转写、原文图片、摘要、关键观点、行动项、来源、提取方式、模型和准确性说明。</li>
+          <li>成功任务的临时音视频已清理，文字与 Obsidian 附件仍完整可用。</li>
+          <li>浏览器 Cookie、API Key 和分享追踪参数不会进入日志或笔记。</li>
+          <li>B站、YouTube、AI 总结、Obsidian 和清理等新实现能力均有独立测试与端到端验收记录。</li>
+          <li>README、环境示例、用户手册、测试和依赖版本同步更新。</li>
+        </ul>
+        <div class="callout info">
+          <strong>建议的首个交付切片：</strong>统一输入、内容模型、任务状态机和结构化错误。这一步先固定所有平台都要复用的输入、进度、产物与失败契约，再从零接入第一个平台。
+        </div>
+        <p class="small">需求澄清：3 轮 · 需求清晰度：92/100 · 文档版本：1.0</p>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
