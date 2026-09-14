@@ -85,6 +85,8 @@ class TestObsidianExporterExport:
     ) -> None:
         result = await exporter.export(sample_document, sample_summary)
         assert result.note_path == "Inbox/evey2obs/测试视频标题.md"
+        assert result.obsidian_uri is not None
+        assert result.obsidian_uri.startswith("obsidian://open?vault=")
 
     async def test_note_file_contains_expected_content(
         self,

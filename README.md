@@ -103,49 +103,69 @@ tags: [AI, 视频笔记]
 ## 命令行
 
 ```bash
-evey2obs doctor       # 系统诊断（Python、ffmpeg、yt-dlp）
-evey2obs test-llm     # 测试 LLM 连接
-evey2obs gui          # 启动桌面 GUI
+evey2obs doctor            # 系统诊断（Python、ffmpeg、yt-dlp、LLM、Vault）
+evey2obs test-llm          # 测试 LLM 连接与总结能力
+evey2obs gui               # 启动桌面 GUI（支持多任务队列、模板切换、草稿箱管理）
+evey2obs package-preflight # 桌面打包前置验证（依赖、Tkinter、随包文档）
+evey2obs cache-clear       # 清理音视频 Whisper 转写指纹缓存
+evey2obs draft list        # 列出 Vault 写入失败保存的待导出草稿
+evey2obs draft retry <id>  # 单独重试草稿导出（无需重新转写或重调大模型）
+evey2obs draft remove <id> # 删除待导出草稿
 ```
 
 ## 项目结构
 
 ```
 src/evey2obs/
-├── models.py            # 领域模型（ContentDocument、Task 等）
-├── protocols.py         # 适配器/处理器/导出器协议
-├── errors.py            # 结构化错误（11 种错误码）
-├── events.py            # 进度事件、取消令牌
-├── settings.py          # 类型化配置、环境变量、脱敏
-├── inputs.py            # URL 提取、平台识别
-├── pipeline.py          # 全流程编排
-├── cleaner.py           # 临时文件清理
-├── sources/             # 7 个平台适配器
-│   ├── base.py          # yt-dlp 基类
-│   ├── bilibili.py      # B站（公开 API，无需 Cookie）
-│   ├── youtube.py       # YouTube
-│   ├── douyin.py        # 抖音
-│   ├── xiaohongshu.py   # 小红书
-│   ├── wechat_article.py
-│   ├── xiaoyuzhou.py
-│   └── local_file.py
-├── processors/          # 处理器
-│   ├── media.py         # ffmpeg 音频提取
-│   ├── transcription.py # Whisper 转写 + 缓存
-│   └── summarization.py # LLM 总结（OpenAI/Anthropic）
-├── exporters/           # 导出
-│   ├── markdown.py      # Markdown 渲染
-│   └── obsidian.py      # Obsidian 原子写入
-└── gui/                 # 桌面 GUI（tkinter）
-    ├── app.py           # 主窗口
-    ├── asyncio_bridge.py
-    └── constants.py
+├── models.py                   # 领域模型（ContentDocument、Task、ObsidianUri 等）
+├── protocols.py                # 适配器/处理器/导出器协议
+├── errors.py                   # 结构化错误（11 种核心错误码）
+├── events.py                   # 进度事件、取消令牌
+├── security.py                 # 系统密钥链凭据存储、URL 追踪清洗与敏感信息脱敏
+├── settings.py                 # 类型化配置、环境变量、脱敏
+├── inputs.py                   # URL 提取、平台识别、批量预检测
+├── pipeline.py                 # 全流程编排（含缓存复用与草稿兜底机制）
+├── cleaner.py                  # 临时音视频与图片文件清理
+├── sources/                    # 7 个平台适配器
+│   ├── base.py                 # yt-dlp 基类
+│   ├── bilibili.py             # B站（公开 API，无需 Cookie）
+│   ├── youtube.py              # YouTube
+│   ├── douyin.py               # 抖音
+│   ├── xiaohongshu.py          # 小红书
+│   ├── wechat_article.py       # 微信公众号
+│   ├── xiaoyuzhou.py           # 小宇宙播客
+│   └── local_file.py           # 本地音频/视频文件
+├── processors/                 # 核心处理器
+│   ├── media.py                # ffmpeg 音频提取
+│   ├── transcription.py        # Whisper 转写器
+│   ├── transcript_cache.py     # 内容指纹缓存（免重复转写，支持强刷）
+│   └── summarization.py        # 5 种场景模板 LLM 结构化总结（OpenAI/Anthropic）
+├── exporters/                  # 导出器
+│   ├── markdown.py             # Markdown 渲染
+│   ├── obsidian.py             # Obsidian 原子写入与 URI 生成
+│   └── pending_exports.py      # 待导出草稿持久化与免重试恢复
+├── packaging/                  # 跨平台桌面打包模块
+│   ├── preflight.py            # 打包前置环境与契约检查
+│   ├── macos.py                # macOS .app 应用生成器
+│   └── windows.py              # Windows 便携包生成器
+└── gui/                        # 桌面 GUI（轻量级原生 Tkinter）
+    ├── app.py                  # 主窗口、模板选择、草稿箱管理与深链跳转
+    ├── asyncio_bridge.py       # 线程安全的异步事件桥接
+    └── constants.py            # GUI 样式、主题与文案常量
 ```
 
-## 开发
+## 文档指引
+
+- [新手使用指南](docs/GETTING_STARTED.html) - 图文使用教程与常见问题
+- [隐私与安全说明](docs/PRIVACY.html) - 数据流转、凭据存储与隐私边界
+- [架构设计说明](docs/ARCHITECTURE.md) - 系统分层、协议与领域模型
+- [项目进度追踪](docs/PROJECT_STATUS.md) - 阶段交付与双项目合并记录
+
+## 开发与验证
 
 ```bash
-pip install -e '.[dev]'
-python -m pytest          # 307 测试
-python -m ruff check .    # 代码检查
+pip install -e '.[dev,package]'
+python -m pytest          # 326 个单元测试与集成测试全部通过
+python -m ruff check .    # 0 错误 0 警告
+python -m evey2obs package-preflight # 打包前置 6 项检查通过
 ```

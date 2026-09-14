@@ -92,9 +92,16 @@ class ObsidianExporter(Exporter):
         except ValueError:
             vault_rel_note = str(note_path)
 
+        # 5. Build Obsidian protocol URI (obsidian://open?vault=...&file=...)
+        import urllib.parse
+        vault_name = urllib.parse.quote(self._vault_root.name)
+        file_encoded = urllib.parse.quote(vault_rel_note)
+        obsidian_uri = f"obsidian://open?vault={vault_name}&file={file_encoded}"
+
         return ExportResult(
             note_path=vault_rel_note,
             attachment_paths=tuple(attachment_paths),
+            obsidian_uri=obsidian_uri,
         )
 
     # ── Internal helpers ──────────────────────────────────────────────────

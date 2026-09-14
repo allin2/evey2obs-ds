@@ -101,3 +101,22 @@ class TestPipelineProcessTask:
     def test_internal_state_exists(self, pipeline: ProcessingPipeline) -> None:
         assert pipeline._tasks is not None
         assert pipeline._cancel_tokens is not None
+        assert pipeline.transcript_cache is not None
+        assert pipeline.pending_exports is not None
+
+    def test_submit_with_options(self, pipeline: ProcessingPipeline) -> None:
+        with patch.object(pipeline, "_process_task") as mock_process:
+            import asyncio
+
+            async def _run():
+                si = SourceInput.from_urls(["https://b23.tv/BV123"])
+                tasks = await pipeline.submit(
+                    si, force_refresh=True, template="course"
+                )
+                assert len(tasks) == 1
+
+            asyncio.run(_run())
+            mock_process.assert_called_once()
+            _, kwargs = mock_process.call_args
+            assert kwargs["force_refresh"] is True
+            assert kwargs["template"] == "course"

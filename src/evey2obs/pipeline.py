@@ -17,6 +17,7 @@ from evey2obs.cleaner import MediaCleaner
 from evey2obs.errors import Evey2ObsError
 from evey2obs.events import CancelToken, ProgressEvent
 from evey2obs.exporters.obsidian import ObsidianExporter
+from evey2obs.exporters.pending_exports import PendingExportsManager
 from evey2obs.models import (
     ContentDocument,
     ErrorCode,
@@ -29,6 +30,7 @@ from evey2obs.models import (
 )
 from evey2obs.processors.media import MediaProcessor
 from evey2obs.processors.summarization import SummarizationProcessor
+from evey2obs.processors.transcript_cache import TranscriptionCache
 from evey2obs.processors.transcription import TranscriptionProcessor
 from evey2obs.protocols import (
     Cleaner,
@@ -65,21 +67,43 @@ class ProcessingPipeline:
         results = await pipeline.wait_all(tasks)
     """
 
-    def __init__(self, settings: AppSettings) -> None:
+    def __init__(
+        self,
+        settings: AppSettings,
+        transcript_cache: TranscriptionCache | None = None,
+        pending_exports: PendingExportsManager | None = None,
+    ) -> None:
         self._settings = settings
         self._tasks: dict[str, Task] = {}
         self._cancel_tokens: dict[str, CancelToken] = {}
         self._progress_callbacks: list[callable] = []
         self._results: dict[str, ExportResult] = {}
         self._documents: dict[str, ContentDocument] = {}
+        self._transcript_cache = transcript_cache or TranscriptionCache()
+        self._pending_exports = pending_exports or PendingExportsManager()
 
     # ── Public API ────────────────────────────────────────────────────────
+
+    @property
+    def transcript_cache(self) -> TranscriptionCache:
+        """Return the pipeline's transcription cache instance."""
+        return self._transcript_cache
+
+    @property
+    def pending_exports(self) -> PendingExportsManager:
+        """Return the pipeline's pending exports draft manager."""
+        return self._pending_exports
 
     def on_progress(self, callback: callable) -> None:
         """Register a callback receiving ``ProgressEvent`` for each task update."""
         self._progress_callbacks.append(callback)
 
-    async def submit(self, source_input: SourceInput) -> list[Task]:
+    async def submit(
+        self,
+        source_input: SourceInput,
+        force_refresh: bool = False,
+        template: str | None = None,
+    ) -> list[Task]:
         """Create tasks for each URL and start processing.
 
         Returns immediately with tasks in QUEUED state.
@@ -108,7 +132,15 @@ class ProcessingPipeline:
             tasks.append(task)
 
             # Start processing in background
-            asyncio.create_task(self._process_task(task_id, url, source_input))
+            asyncio.create_task(
+                self._process_task(
+                    task_id,
+                    url,
+                    source_input,
+                    force_refresh=force_refresh,
+                    template=template,
+                )
+            )
 
         return tasks
 
@@ -149,7 +181,12 @@ class ProcessingPipeline:
     # ── Internal: task processing ─────────────────────────────────────────
 
     async def _process_task(
-        self, task_id: str, url: str, source_input: SourceInput
+        self,
+        task_id: str,
+        url: str,
+        source_input: SourceInput,
+        force_refresh: bool = False,
+        template: str | None = None,
     ) -> None:
         task = self._tasks[task_id]
         cancel = self._cancel_tokens[task_id]
@@ -178,20 +215,47 @@ class ProcessingPipeline:
             text = await adapters.extract_text(source)
 
             if text is None or not text.text.strip():
-                # ── Stage 3b: Transcribe ──────────────────────────────────
-                self._transition(task, TaskStatus.TRANSCRIBING, "Downloading media")
-                media = await adapters.extract_media(source)
-                if media:
-                    # NEVER clean up local files — only downloaded temp media
-                    if url != "__local__":
-                        media_items.append(media)
+                # Check transcript cache before downloading media
+                local_path = (
+                    Path(source_input.local_files[0])
+                    if url == "__local__" and source_input.local_files
+                    else None
+                )
+                cached = None
+                if not force_refresh:
+                    cached = self._transcript_cache.load(
+                        source_type=source.source_type,
+                        source_id=source.source_id,
+                        model_name=self._settings.whisper_model,
+                        file_path=local_path,
+                    )
 
-                    transcriber = self._build_transcriber()
-                    self._transition(task, TaskStatus.TRANSCRIBING, "Transcribing audio")
-                    text = await transcriber.transcribe(media, cancel_token=cancel)
+                if cached is not None:
+                    text = cached
+                    self._emit(task, "命中转写本地缓存")
                 else:
-                    # No text and no media — treat as empty
-                    text = self._empty_text()
+                    # ── Stage 3b: Transcribe ──────────────────────────────
+                    self._transition(task, TaskStatus.TRANSCRIBING, "Downloading media")
+                    media = await adapters.extract_media(source)
+                    if media:
+                        # NEVER clean up local files — only downloaded temp media
+                        if url != "__local__":
+                            media_items.append(media)
+
+                        transcriber = self._build_transcriber()
+                        self._transition(task, TaskStatus.TRANSCRIBING, "Transcribing audio")
+                        text = await transcriber.transcribe(media, cancel_token=cancel)
+                        if text and text.text.strip():
+                            self._transcript_cache.store(
+                                source_type=source.source_type,
+                                source_id=source.source_id,
+                                model_name=self._settings.whisper_model,
+                                extracted=text,
+                                file_path=local_path,
+                            )
+                    else:
+                        # No text and no media — treat as empty
+                        text = self._empty_text()
 
             # Build content document
             doc = ContentDocument(
@@ -213,7 +277,7 @@ class ProcessingPipeline:
 
             # ── Stage 4: Summarize ────────────────────────────────────────
             self._transition(task, TaskStatus.SUMMARIZING, "Generating AI summary")
-            summarizer = self._build_summarizer()
+            summarizer = self._build_summarizer(template=template)
             summary = await summarizer.summarize(doc)
             doc = ContentDocument(
                 id=doc.id,
@@ -240,7 +304,20 @@ class ProcessingPipeline:
             # ── Stage 5: Export ───────────────────────────────────────────
             self._transition(task, TaskStatus.EXPORTING, "Writing to Obsidian")
             exporter = self._build_exporter()
-            result = await exporter.export(doc, summary)
+            try:
+                result = await exporter.export(doc, summary)
+            except Exception as export_err:
+                draft_id = self._pending_exports.save(
+                    doc, summary, error_message=str(export_err)
+                )
+                msg = (
+                    f"导出到 Obsidian 失败，已保存在待导出草稿箱 (ID: {draft_id[:8]}): "
+                    f"{export_err}"
+                )
+                raise Evey2ObsError(
+                    ErrorCode.CONTENT_UNAVAILABLE,
+                    msg,
+                ) from export_err
 
             # ── Stage 6: Cleanup ──────────────────────────────────────────
             self._transition(task, TaskStatus.CLEANING, "Cleaning up temp files")
@@ -310,8 +387,8 @@ class ProcessingPipeline:
         )
         return TranscriptionProcessor(self._settings, media_processor=media_proc)
 
-    def _build_summarizer(self) -> Summarizer:
-        return SummarizationProcessor(self._settings.llm)
+    def _build_summarizer(self, template: str | None = None) -> Summarizer:
+        return SummarizationProcessor(self._settings.llm, template=template)
 
     def _build_exporter(self) -> Exporter:
         obsidian = self._settings.obsidian

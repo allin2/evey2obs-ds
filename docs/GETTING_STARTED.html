@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>evey2obs 新手指南</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f3ec;
+      --paper: #fffaf0;
+      --ink: #202026;
+      --muted: #6d6875;
+      --line: #e6dcc8;
+      --accent: #7c3aed;
+      --accent-soft: #ede9fe;
+      --ok: #0f766e;
+      --warn: #b45309;
+      --bad: #be123c;
+      --code: #28213a;
+    }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top left, #fff7ed 0, var(--bg) 42rem);
+      color: var(--ink);
+      font: 16px/1.7 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 48px 24px 72px;
+    }
+    header {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 28px;
+      align-items: stretch;
+      margin-bottom: 28px;
+    }
+    section, .hero, .card {
+      background: rgba(255, 250, 240, .92);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: 0 18px 50px rgba(48, 35, 20, .08);
+    }
+    .hero {
+      padding: 34px;
+    }
+    h1, h2, h3 {
+      line-height: 1.22;
+      margin: 0 0 14px;
+    }
+    h1 {
+      font-size: clamp(34px, 5vw, 58px);
+      letter-spacing: -0.04em;
+    }
+    h2 {
+      font-size: 28px;
+      margin-top: 0;
+    }
+    h3 {
+      font-size: 19px;
+    }
+    p {
+      margin: 0 0 14px;
+    }
+    a {
+      color: var(--accent);
+    }
+    .lead {
+      color: var(--muted);
+      font-size: 18px;
+      max-width: 62ch;
+    }
+    .badge {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #4c1d95;
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    .side {
+      padding: 28px;
+    }
+    .toc {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .toc li {
+      border-bottom: 1px solid var(--line);
+    }
+    .toc li:last-child {
+      border-bottom: 0;
+    }
+    .toc a {
+      display: block;
+      padding: 11px 0;
+      color: var(--ink);
+      text-decoration: none;
+    }
+    section {
+      padding: 30px;
+      margin: 20px 0;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .card {
+      padding: 20px;
+      box-shadow: none;
+    }
+    .step {
+      display: grid;
+      grid-template-columns: 46px 1fr;
+      gap: 14px;
+      margin: 18px 0;
+    }
+    .num {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      background: var(--ink);
+      color: white;
+      font-weight: 800;
+    }
+    code, pre {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    code {
+      background: #f0e7d8;
+      border-radius: 7px;
+      padding: 2px 6px;
+    }
+    pre {
+      overflow: auto;
+      padding: 16px;
+      border-radius: 16px;
+      background: var(--code);
+      color: #fff7ed;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      overflow: hidden;
+      border-radius: 16px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 12px 14px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #f3ead8;
+    }
+    .callout {
+      border-left: 5px solid var(--accent);
+      background: #f8f5ff;
+      padding: 16px 18px;
+      border-radius: 16px;
+      margin: 16px 0;
+    }
+    .warn {
+      border-left-color: var(--warn);
+      background: #fff7ed;
+    }
+    .ok {
+      color: var(--ok);
+      font-weight: 700;
+    }
+    .bad {
+      color: var(--bad);
+      font-weight: 700;
+    }
+    footer {
+      color: var(--muted);
+      margin-top: 30px;
+      text-align: center;
+    }
+    @media (max-width: 860px) {
+      header, .grid {
+        grid-template-columns: 1fr;
+      }
+      main {
+        padding: 24px 14px 48px;
+      }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="hero">
+      <div class="badge">evey2obs onboarding</div>
+      <h1>15 分钟生成第一篇 Obsidian 笔记</h1>
+      <p class="lead">
+        这份指南面向第一次使用 evey2obs 的用户：配置大模型、验证 Obsidian Vault、
+        粘贴链接或导入本地音视频，然后把原文、摘要、关键观点和行动项沉淀到你的 Vault。
+      </p>
+    </div>
+    <nav class="side">
+      <h2>快速导航</h2>
+      <ol class="toc">
+        <li><a href="#before">开始前准备</a></li>
+        <li><a href="#setup">首次配置</a></li>
+        <li><a href="#first-note">生成首篇笔记</a></li>
+      <li><a href="#fallback">链接失败时怎么办</a></li>
+      <li><a href="#diagnostics">诊断与求助</a></li>
+      <li><a href="#acceptance">真实样例验收</a></li>
+      </ol>
+    </nav>
+  </header>
+
+  <section id="before">
+    <h2>1. 开始前准备</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Python 与依赖</h3>
+        <p>开发环境需要 Python 3.11+。音视频转写路径还需要 <code>ffmpeg</code>、<code>yt-dlp</code> 与 <code>openai-whisper</code>。</p>
+      </div>
+      <div class="card">
+        <h3>大模型服务</h3>
+        <p>准备 OpenAI-compatible 或 Anthropic-compatible 服务的 Base URL、API Key 和模型名。</p>
+      </div>
+      <div class="card">
+        <h3>Obsidian Vault</h3>
+        <p>选择一个你自己的 Vault。evey2obs 会写入 Markdown、JSON 清单和原文图片附件。</p>
+      </div>
+    </div>
+    <div class="callout warn">
+      不要把真实 API Key、Cookie、个人 Vault 路径或浏览器 Cookie 数据库路径提交到 Git、
+      测试夹具、笔记正文或诊断报告。
+    </div>
+  </section>
+
+  <section id="setup">
+    <h2>2. 首次配置</h2>
+    <div class="step">
+      <div class="num">1</div>
+      <div>
+        <h3>安装并启动</h3>
+        <pre><code>cd /path/to/evey2obs
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip
+python -m pip install -e '.[dev]'
+evey2obs-gui</code></pre>
+      </div>
+    </div>
+    <div class="step">
+      <div class="num">2</div>
+      <div>
+        <h3>打开桌面设置</h3>
+        <p>在 GUI 点击“设置”，填写协议、Base URL、API Key、模型名、Whisper 模型和 Obsidian Vault。API Key 不会回显，也不会写入普通设置文件，而是交给系统密钥链。</p>
+        <p>CLI 或自动化仍可参考 <code>.env.example</code> 使用环境变量；非空环境变量会覆盖桌面设置：</p>
+        <pre><code>export EVEY2OBS_LLM_PROTOCOL=openai
+export EVEY2OBS_LLM_BASE_URL=https://your-llm.example/v1
+export EVEY2OBS_LLM_API_KEY=sk-...
+export EVEY2OBS_LLM_MODEL=your-model
+export EVEY2OBS_OBSIDIAN_VAULT=/path/to/YourVault
+export EVEY2OBS_WHISPER_MODEL=small</code></pre>
+      </div>
+    </div>
+    <div class="step">
+      <div class="num">3</div>
+      <div>
+        <h3>测试并保存</h3>
+        <p>在设置页点击“测试连接与 Vault”，确认模型连接和可删除测试笔记均通过，再点击“保存并应用”。后续队列会立即使用新配置，无需重启。也可使用 CLI：</p>
+        <pre><code>evey2obs setup-check</code></pre>
+        <p>它会检查大模型连接、Vault 可写性、<code>ffmpeg</code>、<code>yt-dlp</code> 和 <code>openai-whisper</code>。Whisper 检查不会主动下载模型。</p>
+        <p>如果要接入外部自动化或后续移动端分享入口，可运行 <code>evey2obs protocol</code> 查看 <code>evey2obs.task</code> v1.0 命令、进度事件、结果对象和安全边界；也可以用 <code>protocol-run</code> 执行分享 JSON：</p>
+        <pre><code>{
+  "protocol": "evey2obs.task",
+  "version": "1.0",
+  "command": "inspect",
+  "request": {
+    "text": "分享给你 https://youtu.be/example",
+    "local_files": []
+  }
+}</code></pre>
+        <pre><code>evey2obs protocol-run request.json</code></pre>
+      </div>
+    </div>
+    <div class="step">
+      <div class="num">4</div>
+      <div>
+        <h3>发布前预验证</h3>
+        <p>准备打包或交给其他人使用前，运行：</p>
+        <pre><code>evey2obs package-check</code></pre>
+        <p>它会检查 CLI/GUI 入口、关键依赖、随包文档、Tkinter 可用性，以及产品文档里是否仍残留本机绝对路径。</p>
+        <p>预验证通过后，可以生成本地 macOS 应用包骨架：</p>
+        <pre><code>evey2obs package-build --target macos-app --output dist</code></pre>
+        <p>生成后运行结构验证：</p>
+        <pre><code>evey2obs package-verify --target macos-app --app dist/evey2obs.app</code></pre>
+        <p>完成签名、公证和票据装订后，必须再运行严格发行验证：</p>
+        <pre><code>evey2obs package-verify --target macos-app --app dist/evey2obs.app --release</code></pre>
+        <p>严格模式会实际执行 <code>codesign --verify</code>、<code>spctl --assess</code> 与 <code>xcrun stapler validate</code>，任一门禁失败都会返回非零状态。当前 `.app` 尚未签名/公证，仍依赖目标机器的 Python 3.11+ 与项目依赖，因此严格验证按预期不会通过；正式分发前还需要完成真实安装和升级验证。</p>
+        <p>打包产物会包含 <code>RELEASE_CHECKLIST.json</code>。Windows 便携包的结构验证可在任意系统运行，但 <code>--release</code> 不会把静态 ZIP 误报为已发行：Windows 10/11 实机启动、中文路径、Python/Tk、<code>ffmpeg</code>、<code>yt-dlp</code>、<code>openai-whisper</code> 子进程、首次设置和升级仍必须取得实机证据。</p>
+        <h3>构建自包含应用</h3>
+        <p>源码包适合开发验证；交给未安装 Python 的用户前，应在对应目标系统安装打包依赖并构建自包含产物：</p>
+        <pre><code>python -m pip install -e '.[package]'
+evey2obs package-build --target macos-standalone --output dist
+evey2obs package-verify --target macos-standalone --artifact dist/evey2obs-standalone.app</code></pre>
+        <p>Windows 上将目标改为 <code>windows-standalone</code>。构建器冻结 Python、yt-dlp、openai-whisper 与 keyring，并纳入目标平台 ffmpeg；Whisper 模型首次使用时仍会下载。<code>BUILD_INFO.json</code> 用于验证自包含清单，不保存构建机绝对路径。正式分发前仍需完成签名、公证或 Windows 实机验收，并确认所选 ffmpeg 构建及其编解码依赖满足分发许可证要求。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="first-note">
+    <h2>3. 生成首篇笔记</h2>
+    <table>
+      <thead>
+        <tr><th>动作</th><th>GUI</th><th>CLI</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>解析输入</td>
+          <td>粘贴分享文案，先核对识别数量、来源和重复项，再点击“加入队列”。</td>
+          <td><code>evey2obs inspect '分享给你 https://youtu.be/example'</code></td>
+        </tr>
+        <tr>
+          <td>运行任务</td>
+          <td>选择模板，点击“运行队列”；队列会显示标题/链接、平台、阶段、进度、消息和耗时，并持续显示下载百分比/速度/ETA、转写分片。需要重做 Whisper 时勾选“强制重新转写”。</td>
+          <td><code>evey2obs run '分享给你 https://youtu.be/example'</code>；强制刷新时增加 <code>--force-refresh</code>。</td>
+        </tr>
+        <tr>
+          <td>导入本地正文</td>
+          <td>公众号需要验证时，可在微信/浏览器中复制正文，保存为 UTF-8 TXT 或 Markdown，然后点击“选择本地文件”加入队列。</td>
+          <td><code>evey2obs run --file /path/to/copied-article.md</code></td>
+        </tr>
+        <tr>
+          <td>查看结果</td>
+          <td>选择成功任务，点击“预览结果”查看来源、准确性、摘要和全文；也可打开 Markdown、原文或 Obsidian。</td>
+          <td>查看输出的 <code>note_path</code> 与 <code>manifest_path</code>。</td>
+        </tr>
+        <tr>
+          <td>仅重试导出</td>
+          <td>如果任务在导出阶段失败但已保存本地草稿，修复 Vault 设置后选择该失败任务，点击“仅重试导出”；应用重启后可点击“待导出草稿”查看和恢复。</td>
+          <td>先用 <code>evey2obs export-list</code> 查看草稿，再用 <code>evey2obs export-retry &lt;pending_export_id&gt;</code> 恢复；不需要的草稿可用 <code>evey2obs export-remove &lt;pending_export_id&gt;</code> 删除。</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      成功后，Vault 中会出现一篇 Markdown 笔记和一份 JSON 清单；正文图片会写入 Vault 附件目录，
+      音视频临时文件会在导出完整后清理。
+    </p>
+    <div class="callout info">
+      如果 Vault 路径暂时不可用，完整正文、摘要和附件会先保存为本地待导出草稿。CLI 会输出 <code>pending_export_id</code>，并可通过 <code>export-list</code> 在重启后找回；GUI 的“待导出草稿”窗口会列出本机仍可恢复的草稿。
+    </div>
+    <div class="callout info">
+      运行中可以选择任务并点击“取消选中”。下载与 ffmpeg 子进程会被终止，Whisper 会在当前分片结束后停止；点击“清理已完成”只移除成功或已取消的队列记录，不删除 Vault 笔记。
+    </div>
+    <div class="callout warn">
+      长文和长音频会分段总结后归并。若已配置的模型服务连续失败，evey2obs 会保留完整原文并使用本地确定性模板继续导出；笔记会显示 <code>summary_mode: local_fallback</code>，便于之后重新生成 AI 摘要。
+    </div>
+  </section>
+
+  <section id="fallback">
+    <h2>4. 链接失败时怎么办</h2>
+    <table>
+      <thead>
+        <tr><th>现象</th><th>原因</th><th>下一步</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>小红书提示缺少 token</td>
+          <td>裸链接缺少公开分享需要的 <code>xsec_token</code>。</td>
+          <td>从小红书 App 重新执行“分享 → 复制链接”。</td>
+        </tr>
+        <tr>
+          <td>公众号需要验证</td>
+          <td>页面出现验证码、访问限制或仅微信内可见。</td>
+          <td>在浏览器/微信内打开后手动复制正文，保存为 UTF-8 TXT 或 Markdown，再通过“选择本地文件”导入；系统不会绕过访问控制。</td>
+        </tr>
+        <tr>
+          <td>视频平台要求登录</td>
+          <td>内容不公开或平台策略变化。</td>
+          <td>优先尝试公开链接或本地文件；只有确有需要时再考虑授权 Cookie。</td>
+        </tr>
+        <tr>
+          <td>转写失败</td>
+          <td>缺少 <code>ffmpeg</code>、Whisper 或媒体里没有清晰人声。</td>
+          <td>运行 <code>setup-check</code>，或导入已经提取好的本地音频文件。</td>
+        </tr>
+        <tr>
+          <td>导出失败</td>
+          <td>Vault 被移动、未挂载、无写入权限或子目录不可用。</td>
+          <td>修复 Vault 设置后，在 GUI 点击“待导出草稿”或“仅重试导出”，也可运行 <code>evey2obs export-list</code> 与 <code>evey2obs export-retry &lt;pending_export_id&gt;</code>。</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="diagnostics">
+    <h2>5. 诊断与求助</h2>
+    <p>
+      GUI 支持“导出失败诊断”。诊断报告默认只包含失败任务，并经过脱敏处理；
+      它用于定位阶段、错误码和可执行下一步，不应包含 API Key、Cookie 或本机敏感路径。
+    </p>
+    <div class="callout">
+      <span class="ok">推荐顺序：</span>
+      先运行 <code>evey2obs setup-check</code>，再处理一个公开短链接；确认第一篇笔记成功后，再开始批量队列。
+    </div>
+  </section>
+
+  <section id="acceptance">
+    <h2>6. 真实样例验收</h2>
+    <p>
+      默认单元测试不会访问网络，也不会读取 Cookie。需要验证六个平台真实公开样例时，
+      先复制 <code>docs/samples/real_samples.example.json</code> 到私有位置，填入公开链接，
+      再显式运行集成测试：
+    </p>
+    <pre><code>export EVEY2OBS_REAL_SAMPLES=/path/to/real_samples.json
+python -m pytest -m integration --override-ini "addopts=-ra"</code></pre>
+    <p>
+      运行前后都可以生成一份脱敏覆盖报告，确认 B站、YouTube 字幕/Whisper、抖音、
+      小红书成功/缺 token、公众号纯文字/含图、小宇宙文稿/音频、本地音频/视频样例是否齐全：
+    </p>
+    <pre><code>evey2obs acceptance-report \
+  --samples /path/to/real_samples.json \
+  --output acceptance-report.json</code></pre>
+    <p>
+      覆盖报告只检查清单是否齐全，不会证明链接真的跑通。完成大模型连接测试、确认 Whisper
+      使用 <code>small</code> 后，运行完整执行验收：
+    </p>
+    <pre><code>evey2obs acceptance-run \
+  --samples /path/to/real_samples.json \
+  --output acceptance-execution.json</code></pre>
+    <p>
+      每个样例会使用隔离临时 Vault 跑完提取、总结、导出与清理；单项失败不会阻断其余样例。
+      只有 12 个必需案例都有真实通过样例时命令才返回 0。执行报告记录方法、正文长度、附件数、
+      导出/清理状态、稳定错误码和耗时，不记录 URL、正文、标题、本地文件路径或 Vault 路径。
+    </p>
+    <div class="callout warn">
+      不要提交真实样例清单。样例文件可能包含仍然有效的分享 token、个人选择的公开内容、
+      或用于验收的临时链接，应只保存在本机私有位置。覆盖报告和执行报告都不会输出真实链接
+      或正文；分享报告前仍应人工检查一次。
+    </div>
+  </section>
+
+  <footer>
+    相关文档：
+    <a href="PRODUCT_REQUIREMENTS.html">产品需求</a> ·
+    <a href="ARCHITECTURE.md">架构说明</a> ·
+    <a href="MIGRATION_PLAN.md">迁移计划</a> ·
+    <a href="PRIVACY.html">隐私说明</a>
+  </footer>
+</main>
+</body>
+</html>

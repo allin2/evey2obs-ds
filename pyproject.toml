@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "evey2obs-ds"
 version = "0.1.0"
-description = "Claude Code and DeepSeek refactor workspace for evey2obs"
+description = "Unified multi-source content extraction and Obsidian knowledge export"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Proprietary" }
@@ -17,6 +17,7 @@ dependencies = [
     "openai-whisper>=20240930",
     "yt-dlp",
     "beautifulsoup4>=4.12,<5",
+    "keyring>=25",
 ]
 
 [project.optional-dependencies]
@@ -25,9 +26,13 @@ dev = [
   "pytest-cov>=5,<7",
   "ruff>=0.5,<1",
 ]
+package = [
+  "pyinstaller>=6.0",
+]
 
 [project.scripts]
 evey2obs = "evey2obs.cli:main"
+evey2obs-gui = "evey2obs.cli:_cmd_gui"
 
 [tool.setuptools]
 package-dir = { "" = "src" }

@@ -2,24 +2,22 @@
 
 ## 当前阶段
 
-**阶段 6 完成：桌面 GUI 已实现。313 测试通过，Ruff 零问题。**
+**双项目融合与文件整理完成：已将原版成熟特性（转写缓存、草稿箱容灾、系统密钥链、Obsidian 深链、多场景总结模板、跨平台独立打包）与全部文档资产（新手指南、隐私说明、验收用例矩阵）全面整理并融入现代化基座。330 项测试全部通过，Ruff 零代码问题。**
 
 ## 已完成
 
 - **阶段 0-5**：全部业务层（7 个平台适配器 + 处理管线 + 导出 + 清理）
-- **阶段 6：桌面 GUI**
-  - `gui/app.py`：tkinter 主窗口（输入区、任务队列、结果面板、菜单栏）
-  - `gui/asyncio_bridge.py`：asyncio ↔ tkinter 线程桥接（后台 pipeline，前台 poll 事件）
-  - `gui/constants.py`：中文标签/平台图标/错误消息/Whisper 模型大小
-  - 首次配置向导（4 步：LLM 配置 + Obsidian Vault + Whisper + 完成）
-  - 设置对话框（大模型 / Obsidian / 高级设置）
-  - 实时任务进度（排队 → 识别 → 提取 → 转写 → 总结 → 导出 → 完成）
-  - `evey2obs gui` CLI 命令
-  - `ProcessingPipeline.get_result()` 结果存取
-  - 15 项 GUI 相关测试（常量、桥接、URL 预览）
-  - 首次配置和设置表单会校验并应用到当前运行实例
-  - URL 提交统一去重，队列显示平台、阶段进度和失败详情
-  - **零新依赖**（仅 Python 标准库 tkinter）
+- **阶段 6：桌面 GUI**（原生轻量 Tkinter + asyncio 线程桥接）
+- **阶段 7：双项目优势融合与统一**
+  - **转写本地指纹缓存 (`processors/transcript_cache.py`)**：基于内容哈希与 Whisper 模型缓存转写，二次处理秒级跳过下载与转写，支持 `--force-refresh` 强制重转。
+  - **待导出草稿容灾箱 (`exporters/pending_exports.py`)**：Vault 异常或离线时安全暂存本地草稿，支持 GUI/CLI 一键“仅重试导出”，无需重耗 API 额度与转写耗时。
+  - **系统级凭据安全 (`security.py`)**：通过系统密钥链（macOS Keychain / Windows Credential Manager）加密存储大模型 API Key，提供平滑降级与日志脱敏。
+  - **Obsidian 协议深链 (`obsidian://open`)**：生成深链并在桌面端一键直达 Obsidian 对应笔记。
+  - **多场景总结预设模板**：通用、课程学习、会议/访谈纪要、短视频快讯提炼、文章深度精读等定制化 Prompt 模板。
+  - **跨平台独立打包分发 (`packaging/`)**：提供打包预检 `PackagePreflight`、macOS `.app` 构建器与 Windows 便携版生成器，支持 `evey2obs package-preflight`。
+  - **真实用例验收覆盖评估 (`acceptance.py`)**：12 种真实用例矩阵覆盖评估，支持 `evey2obs acceptance-report`。
+  - **文档资产完整归集**：整合 `GETTING_STARTED.html`（新手指南）、`PRIVACY.html`（隐私边界）、`PRODUCT_REQUIREMENTS.html`、样例配置与实机样例模板。
+  - **CLI 运维扩展**：新增 `package-preflight`、`cache-clear`、`acceptance-report`、`draft {list|retry|remove}`。
 
 ## 全部平台适配器
 
@@ -37,14 +35,17 @@
 
 ```text
 Python: 3.11.15
-Tests: 313 passed
+Tests: 330 passed
 Ruff: 0 issues
 Doctor: ffmpeg + yt-dlp available
+Package Preflight: all 6 checks passed
+Acceptance Matrix: 12/12 cases covered
 ```
 
 ## 后续方向
 
-- macOS 可分发包（py2app）
+- macOS 可分发包（py2app / PyInstaller）
 - 真实网络端到端验收测试
 - Windows 路径兼容完善
 - 移动端验证
+

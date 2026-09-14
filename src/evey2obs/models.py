@@ -253,3 +253,4 @@ class ExportResult:
     note_path: str
     attachment_paths: tuple[str, ...] = ()
     manifest_path: str | None = None
+    obsidian_uri: str | None = None

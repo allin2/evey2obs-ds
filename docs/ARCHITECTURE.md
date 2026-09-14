@@ -124,6 +124,30 @@ Any active stage -> failed | cancelled
 
 任务阶段和错误码属于 UI、CLI 和移动端的稳定协议，不应直接暴露第三方工具日志。
 
+## 生产级弹性和性能特性
+
+### 1. 转写内容指纹缓存 (`TranscriptCache`)
+- 依据音频内容 SHA256 哈希及 Whisper 模型名称计算唯一缓存指纹。
+- 转写完成时持久化脱敏 JSON，媒体下载前若检测到命中则跳过下载与转写，耗时从分钟级降至毫秒级。
+- 缓存不包含本地路径、URL 或用户凭据，支持 `--force-refresh` 绕过与 `cache-clear` 清理。
+
+### 2. 待导出草稿箱 (`PendingExportsManager`)
+- 当 Vault 路径不存在、权限不足或磁盘已满导致导出失败时，自动将中间态（抽取文本、图片、AI 摘要）保存为独立草稿文件。
+- 用户可在修复 Vault 配置后通过 GUI「待导出草稿」或 CLI `draft retry` 单独重试导出，无需重新下载媒体、重跑 Whisper 或重调大模型。
+
+### 3. 安全凭据与脱敏 (`Security`)
+- 普通设置写入本地平台配置目录；API Key 优先采用 OS 系统密钥链 (`keyring`) 安全存储。
+- 所有输出与日志经脱敏处理器，剔除 URL 中的追踪分析参数（spm_id, bvid, utm 等）并脱敏敏感 Authorization/Token。
+
+### 4. Obsidian 深度链接与交互
+- 笔记导出后自动推导 Vault 名称与相对路径，生成 `obsidian://open?vault=...&file=...` 协议深链。
+- GUI 提供一键「在 Obsidian 中打开」，实现从转写工具到知识库的无缝交互。
+
+### 5. 跨平台打包与分发 (`Packaging`)
+- `preflight`: 环境自检，验证 Python 运行时、构建后端、CLI/GUI 入口、关键依赖、随包文档和 Tkinter。
+- `macos`: 构建标准化 macOS `.app` 应用程序包。
+- `windows`: 构建免安装便携版 Windows ZIP 包。
+
 ## 配置与密钥
 
 - 普通设置：本地配置文件。
@@ -136,5 +160,6 @@ Any active stage -> failed | cancelled
 - 单元测试：输入解析、状态机、数据模型、笔记渲染和脱敏。
 - 适配器合约测试：每个平台运行同一组基础契约。
 - 夹具测试：使用脱敏后的页面和 API 响应，不依赖实时网络。
-- 集成测试：可选访问真实公开链接，按平台分组。
+- 验收矩阵测试：覆盖 12 种真实用例矩阵与异常路径报告。
 - 端到端测试：使用临时 Vault 验证批量队列、附件、笔记和清理行为。
+

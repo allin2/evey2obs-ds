@@ -79,6 +79,60 @@ SYSTEM_PROMPT_AUDIO = """\
 - quotes 摘录嘉宾的精彩发言或关键结论。
 - tags 应有助于在 Obsidian 中按主题检索播客内容。"""
 
+SYSTEM_PROMPT_COURSE = """\
+你是一个专业的课程学习助手。请根据提供的课程或教学内容，生成一份结构化的课程学习笔记。
+
+必须严格使用以下 JSON 格式返回：
+
+{
+  "one_line_summary": "一句话概括课程主旨与学习目标",
+  "key_points": ["核心概念1", "关键原理2", "实操要点3"],
+  "detailed_notes": "详细笔记（包含前置背景、核心原理解析、案例演示与步骤）",
+  "action_items": ["动手练习建议1", "深入研究方向2"],
+  "quotes": ["导师关键提醒或论断1", "导师关键提醒2"],
+  "tags": ["课程", "教程", "技能"]
+}
+
+要求：
+- 梳理清晰的概念脉络与知识结构。
+- 突出实操步骤、核心原理及常见误区避坑指南。"""
+
+SYSTEM_PROMPT_MEETING = """\
+你是一个专业的会议纪要整理助手。请根据提供的会议或访谈文本，生成一份结构化的会议纪要。
+
+必须严格使用以下 JSON 格式返回：
+
+{
+  "one_line_summary": "一句话概括会议主题与核心结论",
+  "key_points": ["讨论重点1", "重要观点2", "共识决议3"],
+  "detailed_notes": "详细纪要（按议题或发言人梳理讨论脉络）",
+  "action_items": ["明确的待办事项1", "待确认事宜2"],
+  "quotes": ["关键发言摘录1", "关键发言摘录2"],
+  "tags": ["会议纪要", "行动项"]
+}
+
+要求：
+- 重点区分已达成的结论与待进一步确认的开放问题。
+- 行动项必须具体明确。"""
+
+SYSTEM_PROMPT_SHORT_VIDEO = """\
+你是一个专业的短视频与快讯干货提炼助手。请根据提供的短视频口播内容，快速提取高信息密度干货。
+
+必须严格使用以下 JSON 格式返回：
+
+{
+  "one_line_summary": "一句话提炼视频核心爆点或结论",
+  "key_points": ["核心要点1", "核心要点2", "核心要点3"],
+  "detailed_notes": "干货笔记（过滤口头禅与引流话术，按逻辑整理核心实操步骤）",
+  "action_items": ["实操建议1", "落地步骤2"],
+  "quotes": ["精辟金句1", "精辟金句2"],
+  "tags": ["短视频", "干货"]
+}
+
+要求：
+- 严格过滤无信息量的口头禅、求关注与营销话术。
+- 提炼实用的核心干货与操作步骤。"""
+
 USER_PROMPT_TEMPLATE = """请总结以下内容：
 
 标题：{title}
@@ -102,10 +156,12 @@ class SummarizationProcessor(Summarizer):
         self,
         settings: LLMSettings,
         http_client: httpx.AsyncClient | None = None,
+        template: str | None = None,
     ) -> None:
         self._settings = settings
         self._client = http_client
         self._owns_client = http_client is None
+        self._template = template or settings.template or "general"
 
     # ── Protocol ──────────────────────────────────────────────────────────
 
@@ -155,9 +211,18 @@ class SummarizationProcessor(Summarizer):
 
     # ── API calls ─────────────────────────────────────────────────────────
 
-    @staticmethod
-    def _select_system_prompt(document: ContentDocument) -> str:
-        """Select system prompt based on content type."""
+    @classmethod
+    def _select_system_prompt(cls, document: ContentDocument, template: str = "general") -> str:
+        """Select system prompt based on template and content type."""
+        if template == "course":
+            return SYSTEM_PROMPT_COURSE
+        elif template == "meeting":
+            return SYSTEM_PROMPT_MEETING
+        elif template == "short_video":
+            return SYSTEM_PROMPT_SHORT_VIDEO
+        elif template == "article":
+            return SYSTEM_PROMPT_ARTICLE
+
         ct = document.content_type.value
         if ct == "article":
             return SYSTEM_PROMPT_ARTICLE
@@ -186,7 +251,7 @@ class SummarizationProcessor(Summarizer):
         total: int = 1,
     ) -> str:
         user_prompt = self._build_user_prompt(document, chunk, chunk_index, total)
-        system_prompt = self._select_system_prompt(document)
+        system_prompt = self._select_system_prompt(document, self._template)
         payload = {
             "model": self._settings.model,
             "messages": [
@@ -218,7 +283,7 @@ class SummarizationProcessor(Summarizer):
         total: int = 1,
     ) -> str:
         user_prompt = self._build_user_prompt(document, chunk, chunk_index, total)
-        system_prompt = self._select_system_prompt(document)
+        system_prompt = self._select_system_prompt(document, self._template)
         payload = {
             "model": self._settings.model,
             "max_tokens": 4096,

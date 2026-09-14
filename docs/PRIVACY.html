@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>evey2obs 隐私说明</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #eef3f8;
+      --panel: #ffffff;
+      --ink: #172033;
+      --muted: #64748b;
+      --line: #dbe4ee;
+      --accent: #0f766e;
+      --accent-soft: #ccfbf1;
+      --warn: #b45309;
+      --bad: #be123c;
+      --code: #0f172a;
+    }
+    body {
+      margin: 0;
+      background:
+        linear-gradient(135deg, rgba(204,251,241,.8), rgba(238,243,248,.4) 36rem),
+        var(--bg);
+      color: var(--ink);
+      font: 16px/1.7 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 48px 24px 72px;
+    }
+    header, section {
+      background: rgba(255,255,255,.94);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(15, 23, 42, .08);
+    }
+    header {
+      padding: 38px;
+      margin-bottom: 22px;
+    }
+    section {
+      padding: 30px;
+      margin: 18px 0;
+    }
+    h1, h2, h3 {
+      line-height: 1.2;
+      margin: 0 0 14px;
+    }
+    h1 {
+      font-size: clamp(34px, 5vw, 56px);
+      letter-spacing: -0.04em;
+    }
+    h2 {
+      font-size: 28px;
+    }
+    h3 {
+      font-size: 18px;
+    }
+    p {
+      margin: 0 0 14px;
+    }
+    a {
+      color: var(--accent);
+    }
+    .lead {
+      color: var(--muted);
+      max-width: 68ch;
+      font-size: 18px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #115e59;
+      font-weight: 800;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      background: #f8fafc;
+    }
+    ul {
+      padding-left: 22px;
+    }
+    li {
+      margin: 8px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 12px 14px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #e6fffa;
+    }
+    code, pre {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    code {
+      background: #e2e8f0;
+      border-radius: 7px;
+      padding: 2px 6px;
+    }
+    pre {
+      overflow: auto;
+      padding: 16px;
+      border-radius: 16px;
+      background: var(--code);
+      color: #ecfeff;
+      font-size: 14px;
+    }
+    .callout {
+      border-left: 5px solid var(--accent);
+      background: #f0fdfa;
+      border-radius: 16px;
+      padding: 16px 18px;
+      margin: 16px 0;
+    }
+    .warn {
+      border-left-color: var(--warn);
+      background: #fffbeb;
+    }
+    .bad {
+      color: var(--bad);
+      font-weight: 700;
+    }
+    footer {
+      color: var(--muted);
+      text-align: center;
+      margin-top: 26px;
+    }
+    @media (max-width: 760px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      main {
+        padding: 24px 14px 48px;
+      }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="badge">local-first privacy</div>
+    <h1>evey2obs 隐私说明</h1>
+    <p class="lead">
+      evey2obs 的默认设计是本地优先：平台链接解析、音频转写、Markdown/JSON 导出和临时文件清理都在你的机器上完成。
+      只有当你配置大模型服务时，提取后的文本才会发送到该服务用于总结。
+    </p>
+  </header>
+
+  <section>
+    <h2>1. 默认会处理哪些数据</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>输入内容</h3>
+        <p>你粘贴的分享链接、分享文案或本地音视频文件路径会用于识别来源和创建任务。</p>
+      </div>
+      <div class="card">
+        <h3>提取结果</h3>
+        <p>公开正文、字幕、转写文本、图片附件、摘要和行动项会写入你配置的 Obsidian Vault。</p>
+      </div>
+      <div class="card">
+        <h3>配置</h3>
+        <p>普通设置保存在平台配置目录；API Key 仅交给系统密钥链或从环境变量读取，不写入设置 JSON。</p>
+      </div>
+      <div class="card">
+        <h3>诊断</h3>
+        <p>失败诊断包含任务状态、阶段、错误码和下一步建议，默认只导出失败任务。</p>
+      </div>
+      <div class="card">
+        <h3>转写缓存</h3>
+        <p>系统缓存目录会保存可复用的正文、时间戳和模型名；不保存来源 URL、Cookie、token 或本地媒体路径。</p>
+      </div>
+      <div class="card">
+        <h3>待导出草稿</h3>
+        <p>Vault 导出失败时，应用数据目录会临时保存可恢复的 Markdown、JSON 清单和附件副本；来源链接和本地文件引用会先脱敏，用户可在 GUI/CLI 中列出、恢复或删除。</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>2. 不应保存或外泄的数据</h2>
+    <p>以下内容不得进入笔记、普通日志、测试夹具、异常堆栈或诊断报告：</p>
+    <ul>
+      <li>API Key、Authorization、Cookie、密码、token 和 secret。</li>
+      <li>浏览器 Cookie 数据库路径、Cookie 解密结果和账号凭据。</li>
+      <li>分享追踪参数，例如 <code>utm_*</code>、<code>share_id</code>、<code>shareRedId</code>、<code>appuid</code>。</li>
+      <li>本机敏感路径，例如个人主目录、临时目录和本地端口。</li>
+      <li>DRM、私密、付费墙、验证码或账号访问控制背后的内容。</li>
+    </ul>
+    <div class="callout warn">
+      evey2obs 不绕过访问控制。遇到公众号验证码、仅客户端可见或平台要求登录时，应提示用户复制正文、重新分享公开链接、导入本地文件，或在明确理解风险后授权 Cookie。
+    </div>
+    <p>部分公开分享链接包含抓取所需 token。该 token 只在平台适配器内部访问内容，发送给模型或写入笔记、JSON、CLI、诊断前会从 URL 中删除。</p>
+  </section>
+
+  <section>
+    <h2>3. 大模型请求边界</h2>
+    <p>
+      当你运行总结或完整导出流程时，提取出的正文/字幕会发送给你配置的大模型服务。
+      evey2obs 不内建云端账号或计费；你选择的 Base URL 和 API Key 决定实际服务方。
+    </p>
+    <table>
+      <thead>
+        <tr><th>会发送</th><th>不会主动发送</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>待总结的正文、字幕、提示词和模型名。</td>
+          <td>API Key 明文、Cookie、浏览器 Cookie 文件、本地 Vault 路径。</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>4. Cookie 与认证</h2>
+    <p>
+      默认不读取浏览器 Cookie。只有平台确实要求登录，且用户明确授权后，才应使用
+      高级设置中的浏览器 Cookie 选项，或使用 <code>EVEY2OBS_YTDLP_COOKIES_FROM_BROWSER</code>
+      / <code>EVEY2OBS_YTDLP_COOKIES_FILE</code>。
+    </p>
+    <ul>
+      <li>优先使用公开链接、官方字幕、公开正文或本地文件。</li>
+      <li>授权 Cookie 前，应说明账号隐私和平台风控风险。</li>
+      <li>Cookie 值、Cookie 文件内容和浏览器数据库路径不得进入日志或导出笔记。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>5. Obsidian 与临时文件</h2>
+    <p>
+      Obsidian 导出采用两阶段写入：先写临时文件，验证 Markdown、JSON 清单和附件完整后再替换最终文件。
+      只有导出完整后，系统才会清理下载的音频、视频和切片；应用服务启动时也会按保留期限清理异常退出后遗留的过期临时文件。
+    </p>
+    <p>
+      如果目标 Vault 暂时不可用，evey2obs 会保存本地待导出草稿，供之后仅重试导出。草稿状态只使用相对路径，过滤非必要元数据，不保存 API Key、Cookie、URL token、原始本地媒体路径或浏览器凭据。应用重启后，GUI “待导出草稿”窗口和 CLI <code>export-list</code> 只展示脱敏摘要、附件数量和本地草稿路径。
+    </p>
+    <table>
+      <thead>
+        <tr><th>位置</th><th>用途</th><th>保留策略</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Vault 笔记子目录</td>
+          <td>Markdown 笔记和 JSON 清单。</td>
+          <td>长期保留，由用户管理。</td>
+        </tr>
+        <tr>
+          <td>Vault 附件目录</td>
+          <td>原文图片。</td>
+          <td>长期保留，使用 Vault 内相对引用。</td>
+        </tr>
+        <tr>
+          <td>系统临时目录</td>
+          <td>下载媒体、标准化音频和切片。</td>
+          <td>成功导出后清理；失败文件按诊断保留期限处理。</td>
+        </tr>
+        <tr>
+          <td>系统缓存目录</td>
+          <td>按内容指纹保存 Whisper 转写与时间戳。</td>
+          <td>默认复用；用户可强制重新转写并覆盖，不包含原始媒体或凭据。</td>
+        </tr>
+        <tr>
+          <td>应用数据目录 / pending-exports</td>
+          <td>Vault 导出失败后的 Markdown、JSON 清单和附件副本。</td>
+          <td>仅用于恢复导出；导出成功后自动删除，也可手动删除，可用 <code>EVEY2OBS_RECOVERY_DIR</code> 覆盖父目录。</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>6. 诊断报告</h2>
+    <p>
+      GUI 的“导出失败诊断”用于给用户或开发者定位失败任务。报告会脱敏本机路径和敏感字段，
+      但在分享前仍建议人工检查一次。
+    </p>
+    <pre><code>{
+  "task_id": "...",
+  "source_type": "youtube",
+  "status": "failed",
+  "stage": "summarizing",
+  "error_code": "LLM_FAILED",
+  "next_action": "检查模型配置或稍后重试"
+}</code></pre>
+    <p>
+      <code>acceptance-run</code> 生成的真实样例执行报告采用更严格的最小化字段：仅包含脱敏样例
+      ID、来源类型、提取方法、长度/附件计数、导出与清理布尔状态、稳定错误码和耗时。报告不保存
+      私有样例 URL、分享文案、正文、标题、本地媒体路径、Vault 路径、模型名或异常原文。
+      私有 <code>real_samples.json</code> 本身不受此脱敏保护，必须留在本机且不得提交。
+    </p>
+  </section>
+
+  <section>
+    <h2>7. 用户安全清单</h2>
+    <ul>
+      <li>先用公开链接验证第一篇笔记，再处理批量队列。</li>
+      <li>不要把真实 API Key 或 Cookie 写进截图、issue、测试夹具或聊天记录。</li>
+      <li>遇到验证码、私密内容或付费内容时停止自动抓取。</li>
+      <li>分享诊断报告前，检查是否仍包含个人路径、URL token 或账号信息。</li>
+    </ul>
+  </section>
+
+  <footer>
+    相关文档：
+    <a href="GETTING_STARTED.html">新手指南</a> ·
+    <a href="PRODUCT_REQUIREMENTS.html">产品需求</a> ·
+    <a href="ARCHITECTURE.md">架构说明</a> ·
+    <a href="MIGRATION_PLAN.md">迁移计划</a>
+  </footer>
+</main>
+</body>
+</html>

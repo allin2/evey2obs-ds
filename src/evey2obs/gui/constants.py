@@ -72,3 +72,13 @@ COLOR_FAILED = "#c62828"
 COLOR_ACTIVE = "#1565c0"
 COLOR_QUEUED = "#6a6a6a"
 COLOR_BG = "#f5f5f5"
+
+# ── Summarization templates ───────────────────────────────────────────────
+
+TEMPLATE_LABELS: dict[str, str] = {
+    "general": "通用知识笔记",
+    "course": "课程学习笔记",
+    "meeting": "会议/访谈纪要",
+    "short_video": "短视频快讯提炼",
+    "article": "文章深度精读",
+}

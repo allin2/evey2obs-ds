@@ -1,0 +1,104 @@
+{
+  "description": "Copy this file to a private location, fill public sample links, and run tests with EVEY2OBS_REAL_SAMPLES=/path/to/real_samples.json. Do not commit private URLs, cookies, API keys, or personal Vault paths.",
+  "required_whisper_model": "small",
+  "samples": [
+    {
+      "id": "bilibili_public_chinese_video",
+      "source_type": "bilibili",
+      "text": "https://www.bilibili.com/video/BVxxxxxxxxxx",
+      "expect_success": true,
+      "expected_extraction_methods": ["official_subtitle", "whisper"],
+      "min_text_length": 80
+    },
+    {
+      "id": "youtube_with_subtitles",
+      "source_type": "youtube",
+      "text": "https://youtu.be/xxxxxxxxxxx",
+      "expect_success": true,
+      "expected_extraction_methods": ["official_subtitle"],
+      "min_text_length": 80
+    },
+    {
+      "id": "youtube_without_subtitles",
+      "source_type": "youtube",
+      "text": "https://youtu.be/xxxxxxxxxxx",
+      "expect_success": true,
+      "expected_extraction_methods": ["whisper"],
+      "min_text_length": 80
+    },
+    {
+      "id": "douyin_spoken_share_text",
+      "source_type": "douyin",
+      "text": "复制的抖音分享文案 https://v.douyin.com/xxxx/",
+      "expect_success": true,
+      "expected_extraction_methods": ["official_subtitle", "whisper"],
+      "min_text_length": 80
+    },
+    {
+      "id": "xiaohongshu_valid_app_share",
+      "source_type": "xiaohongshu",
+      "text": "复制的小红书 App 分享短链 https://xhslink.com/xxxx",
+      "expect_success": true,
+      "expected_extraction_methods": ["public_note_body", "whisper"],
+      "min_text_length": 50
+    },
+    {
+      "id": "xiaohongshu_missing_token",
+      "source_type": "xiaohongshu",
+      "text": "https://www.xiaohongshu.com/explore/xxxxxxxxxxxxxxxxxxxxxxxx",
+      "expect_success": false,
+      "expected_error": "SHARE_TOKEN_MISSING"
+    },
+    {
+      "id": "wechat_text_article",
+      "source_type": "wechat",
+      "text": "https://mp.weixin.qq.com/s/xxxxxxxxxxxxxxxxxxxxxx",
+      "expect_success": true,
+      "expected_extraction_methods": ["public_article_body"],
+      "min_text_length": 200
+    },
+    {
+      "id": "wechat_article_with_images",
+      "source_type": "wechat",
+      "text": "https://mp.weixin.qq.com/s/xxxxxxxxxxxxxxxxxxxxxx",
+      "expect_success": true,
+      "expected_extraction_methods": ["public_article_body"],
+      "min_text_length": 200,
+      "min_attachments": 1
+    },
+    {
+      "id": "xiaoyuzhou_with_show_notes",
+      "source_type": "xiaoyuzhou",
+      "text": "https://www.xiaoyuzhoufm.com/episode/xxxxxxxxxxxxxxxxxxxxxxxx",
+      "expect_success": true,
+      "expected_extraction_methods": ["show_notes"],
+      "min_text_length": 80
+    },
+    {
+      "id": "xiaoyuzhou_audio_only",
+      "source_type": "xiaoyuzhou",
+      "text": "https://www.xiaoyuzhoufm.com/episode/xxxxxxxxxxxxxxxxxxxxxxxx",
+      "expect_success": true,
+      "expected_extraction_methods": ["whisper"],
+      "min_text_length": 80
+    },
+    {
+      "id": "local_audio_mp3",
+      "source_type": "local_file",
+      "text": "",
+      "local_files": ["/path/to/private/audio.mp3"],
+      "expect_success": true,
+      "expected_extraction_methods": ["whisper"],
+      "min_text_length": 80
+    },
+    {
+      "id": "local_video_mp4",
+      "source_type": "local_file",
+      "text": "",
+      "local_files": ["/path/to/private/video.mp4"],
+      "expect_success": true,
+      "expected_extraction_methods": ["whisper"],
+      "min_text_length": 80
+    }
+  ]
+}

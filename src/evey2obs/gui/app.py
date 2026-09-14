@@ -22,9 +22,11 @@ from evey2obs.gui.constants import (
     COLOR_SUCCESS,
     PLATFORM_LABELS,
     STAGE_LABELS,
+    TEMPLATE_LABELS,
 )
 from evey2obs.inputs import extract_urls
 from evey2obs.models import SourceInput, TaskStatus
+from evey2obs.security import KeyringStore
 from evey2obs.settings import AppSettings, LLMSettings, ObsidianSettings
 
 logger = logging.getLogger(__name__)
@@ -80,6 +82,7 @@ class App(tk.Tk):
         # Menu
         menubar = tk.Menu(self)
         file_menu = tk.Menu(menubar, tearoff=0)
+        file_menu.add_command(label="待导出草稿箱...", command=self._open_pending_exports)
         file_menu.add_command(label="设置...", command=self._open_settings)
         file_menu.add_separator()
         file_menu.add_command(label="退出", command=self._on_close)
@@ -253,6 +256,18 @@ class App(tk.Tk):
         model_v = tk.StringVar(value=self._settings.llm.model)
         _labeled_row(llm, "模型名:", 3, model_v, width=40)
 
+        tpl_v = tk.StringVar(value=self._settings.llm.template or "general")
+        ttk.Label(llm, text="默认模板:").grid(row=4, column=0, sticky="w", pady=4)
+        ttk.Combobox(llm, textvariable=tpl_v,
+                     values=["general", "course", "meeting", "short_video", "article"],
+                     width=22, state="readonly").grid(row=4, column=1, sticky="w", pady=4)
+
+        use_keyring = tk.BooleanVar(value=KeyringStore().is_available())
+        if KeyringStore().is_available():
+            ttk.Checkbutton(llm, text="保存 API Key 到系统钥匙串 (Keychain/Keyring)", variable=use_keyring).grid(
+                row=5, column=0, columnspan=2, sticky="w", pady=6
+            )
+
         # Obsidian
         obs = ttk.Frame(nb, padding=15)
         nb.add(obs, text="Obsidian")
@@ -278,9 +293,14 @@ class App(tk.Tk):
 
         # Save button
         def _save():
+            api_k = key_v.get()
+            if use_keyring.get() and api_k:
+                KeyringStore().set_password("llm_api_key", api_k)
+
             new_settings = AppSettings(
                 llm=LLMSettings(protocol=proto_v.get(), base_url=url_v.get(),
-                                api_key=key_v.get(), model=model_v.get()),
+                                api_key=api_k, model=model_v.get(),
+                                template=tpl_v.get()),
                 obsidian=ObsidianSettings(vault_path=vault_v.get(),
                                           subdir=subdir_v.get()),
                 whisper_model=self._settings.whisper_model,
@@ -321,6 +341,23 @@ class App(tk.Tk):
 
         ttk.Button(ctrl, text="📁 选择本地文件", command=self._pick_files).pack(side="left", padx=(0, 5))
         ttk.Button(ctrl, text="🔍 识别链接", command=self._preview_urls).pack(side="left", padx=5)
+
+        ttk.Label(ctrl, text="场景模板:").pack(side="left", padx=(10, 2))
+        self._template_var = tk.StringVar(value=self._settings.llm.template or "general")
+        template_display = [f"{v} ({k})" for k, v in TEMPLATE_LABELS.items()]
+        self._template_combo = ttk.Combobox(
+            ctrl,
+            values=template_display,
+            width=15,
+            state="readonly",
+        )
+        cur_tpl = self._template_var.get()
+        self._template_combo.set(f"{TEMPLATE_LABELS.get(cur_tpl, '通用知识笔记')} ({cur_tpl})")
+        self._template_combo.pack(side="left", padx=(0, 5))
+
+        self._force_refresh_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(ctrl, text="强制重转", variable=self._force_refresh_var).pack(side="left", padx=5)
+
         ttk.Button(ctrl, text="▶ 开始处理", command=self._start_processing).pack(side="right", padx=(5, 0))
 
         self._preview_lbl = ttk.Label(ctrl, text="", foreground="#6b6b6b")
@@ -364,7 +401,8 @@ class App(tk.Tk):
 
         actions = ttk.Frame(result_frame)
         actions.grid(row=1, column=0, sticky="ew", pady=(8, 0))
-        ttk.Button(actions, text="打开 Markdown", command=self._open_markdown).pack(side="left", padx=(0, 5))
+        ttk.Button(actions, text="在 Obsidian 中打开", command=self._open_in_obsidian).pack(side="left", padx=(0, 5))
+        ttk.Button(actions, text="打开 Markdown", command=self._open_markdown).pack(side="left", padx=5)
         ttk.Button(actions, text="复制摘要", command=self._copy_summary).pack(side="left", padx=5)
         ttk.Button(actions, text="打开原文", command=self._open_source).pack(side="left", padx=5)
 
@@ -428,7 +466,18 @@ class App(tk.Tk):
                 "链接：粘贴 http:// 或 https:// 开头的网址\n"
                 "文件：使用「选择本地文件」按钮，或输入绝对路径")
             return
-        tasks = self._bridge.submit(si)
+        # Determine template
+        selected_display = self._template_combo.get()
+        template_key = "general"
+        for k in TEMPLATE_LABELS:
+            if f"({k})" in selected_display:
+                template_key = k
+                break
+        force_refresh = self._force_refresh_var.get()
+
+        tasks = self._bridge.submit(
+            si, force_refresh=force_refresh, template=template_key
+        )
         for t in tasks:
             title = text[:60].replace("\n", " ")
             self._tree.insert("", "end", iid=t.id,
@@ -501,9 +550,82 @@ class App(tk.Tk):
         self.clipboard_clear()
         self.clipboard_append(text)
 
-    def _open_source(self) -> None:
-        if hasattr(self, "_current_source_url"):
-            _open_file(self._current_source_url)
+    def _open_in_obsidian(self) -> None:
+        sel = self._tree.selection()
+        if not sel:
+            return
+        task_id = sel[0]
+        _, result = self._bridge.get_result(task_id) if self._bridge else (None, None)
+        if result and getattr(result, "obsidian_uri", None):
+            import webbrowser
+            webbrowser.open(result.obsidian_uri)
+        elif hasattr(self, "_current_note_path") and self._settings.obsidian.vault_path:
+            p = Path(self._settings.obsidian.vault_path) / self._current_note_path
+            if p.exists():
+                _open_file(str(p))
+            else:
+                messagebox.showinfo("提示", "未找到导出的笔记文件", parent=self)
+        else:
+            messagebox.showinfo("提示", "当前任务尚未生成 Obsidian 笔记", parent=self)
+
+    def _open_pending_exports(self) -> None:
+        if not self._bridge:
+            messagebox.showwarning("未初始化", "服务未初始化", parent=self)
+            return
+
+        drafts = self._bridge.pipeline.pending_exports.list()
+        dlg = tk.Toplevel(self)
+        dlg.title("待导出草稿箱")
+        dlg.geometry("680x400")
+        dlg.transient(self)
+        dlg.grab_set()
+
+        frame = ttk.Frame(dlg, padding=12)
+        frame.pack(fill="both", expand=True)
+
+        ttk.Label(frame, text="因 Vault 路径或权限问题暂存的本地笔记草稿：").pack(anchor="w", pady=(0, 6))
+
+        cols = ("id", "title", "platform", "time")
+        tree = ttk.Treeview(frame, columns=cols, show="headings", height=8)
+        tree.heading("id", text="草稿 ID")
+        tree.heading("title", text="标题")
+        tree.heading("platform", text="平台")
+        tree.heading("time", text="暂存时间")
+        tree.column("id", width=80, anchor="center")
+        tree.column("title", width=300)
+        tree.column("platform", width=80, anchor="center")
+        tree.column("time", width=160)
+        tree.pack(fill="both", expand=True)
+
+        for d in drafts:
+            tree.insert("", "end", iid=d.id, values=(d.id[:8], d.title, d.source_type, d.created_at[:19]))
+
+        btn_bar = ttk.Frame(frame)
+        btn_bar.pack(fill="x", pady=(10, 0))
+
+        def _retry():
+            sel = tree.selection()
+            if not sel:
+                return
+            draft_id = sel[0]
+            try:
+                result = self._bridge.retry_export(draft_id)
+                tree.delete(draft_id)
+                messagebox.showinfo("成功", f"草稿已成功导出到 Obsidian:\n{result.note_path}", parent=dlg)
+            except Exception as e:
+                messagebox.showerror("导出失败", f"导出失败: {e}", parent=dlg)
+
+        def _delete():
+            sel = tree.selection()
+            if not sel:
+                return
+            draft_id = sel[0]
+            self._bridge.pipeline.pending_exports.remove(draft_id)
+            tree.delete(draft_id)
+
+        ttk.Button(btn_bar, text="重新导出到 Obsidian", command=_retry).pack(side="left", padx=(0, 5))
+        ttk.Button(btn_bar, text="删除草稿", command=_delete).pack(side="left", padx=5)
+        ttk.Button(btn_bar, text="关闭", command=dlg.destroy).pack(side="right")
 
     def _on_close(self) -> None:
         if self._bridge:

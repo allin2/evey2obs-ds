@@ -26,6 +26,7 @@ class LLMSettings:
     base_url: str = ""
     api_key: str = ""
     model: str = ""
+    template: str = "general"  # "general" | "course" | "meeting" | "short_video" | "article"
 
     def sanitized_dict(self) -> dict[str, str]:
         """Return a dict with *api_key* masked."""
@@ -34,13 +35,14 @@ class LLMSettings:
             "base_url": self.base_url,
             "api_key": "***" if self.api_key else "",
             "model": self.model,
+            "template": self.template,
         }
 
     def __repr__(self) -> str:
         d = self.sanitized_dict()
         return (
             f"LLMSettings(protocol={d['protocol']!r}, base_url={d['base_url']!r}, "
-            f"api_key={d['api_key']!r}, model={d['model']!r})"
+            f"api_key={d['api_key']!r}, model={d['model']!r}, template={d['template']!r})"
         )
 
 
@@ -93,12 +95,21 @@ class AppSettings:
         def _get(key: str, default: str = "") -> str:
             return env.get(key, default)
 
+        api_key = _get("EVEY2OBS_LLM_API_KEY", "")
+        if not api_key:
+            try:
+                from evey2obs.security import KeyringStore
+                api_key = KeyringStore().get_password() or ""
+            except Exception:
+                pass
+
         return cls(
             llm=LLMSettings(
                 protocol=_get("EVEY2OBS_LLM_PROTOCOL", "openai"),
                 base_url=_get("EVEY2OBS_LLM_BASE_URL", ""),
-                api_key=_get("EVEY2OBS_LLM_API_KEY", ""),
+                api_key=api_key,
                 model=_get("EVEY2OBS_LLM_MODEL", ""),
+                template=_get("EVEY2OBS_LLM_TEMPLATE", "general"),
             ),
             obsidian=ObsidianSettings(
                 vault_path=_get("EVEY2OBS_OBSIDIAN_VAULT", ""),

@@ -41,13 +41,30 @@ class AsyncioBridge:
     def pipeline(self) -> ProcessingPipeline:
         return self._pipeline
 
-    def submit(self, source_input):
+    def submit(
+        self,
+        source_input,
+        force_refresh: bool = False,
+        template: str | None = None,
+    ):
         """Submit tasks; returns task IDs immediately."""
 
         future = asyncio.run_coroutine_threadsafe(
-            self._pipeline.submit(source_input), self._loop  # type: ignore[arg-type]
+            self._pipeline.submit(
+                source_input, force_refresh=force_refresh, template=template
+            ),
+            self._loop,  # type: ignore[arg-type]
         )
         return future.result(timeout=10)
+
+    def retry_export(self, recovery_id: str):
+        """Retry exporting a draft from pending exports."""
+        exporter = self._pipeline._build_exporter()
+        future = asyncio.run_coroutine_threadsafe(
+            self._pipeline.pending_exports.retry_export(recovery_id, exporter),
+            self._loop,  # type: ignore[arg-type]
+        )
+        return future.result(timeout=30)
 
     def cancel(self, task_id: str) -> None:
         """Cancel a running task."""

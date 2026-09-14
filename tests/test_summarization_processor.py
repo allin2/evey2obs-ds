@@ -141,3 +141,29 @@ class TestMergeResults:
         r2 = SummaryResult(key_points=("B", "C"))
         merged = SummarizationProcessor._merge_results([r1, r2], doc)
         assert merged.key_points == ("A", "B", "C")
+
+
+class TestTemplates:
+    def test_template_selection(self) -> None:
+        doc = ContentDocument(
+            id="1",
+            source_type=SourceType.BILIBILI,
+            content_type=ContentType.VIDEO,
+            source_url="https://bilibili.com/video/BV1",
+            canonical_url="https://bilibili.com/video/BV1",
+        )
+        # Check course template
+        p_course = SummarizationProcessor._select_system_prompt(doc, "course")
+        assert "课程学习助手" in p_course
+
+        # Check meeting template
+        p_meeting = SummarizationProcessor._select_system_prompt(doc, "meeting")
+        assert "会议纪要整理助手" in p_meeting
+
+        # Check short_video template
+        p_sv = SummarizationProcessor._select_system_prompt(doc, "short_video")
+        assert "短视频与快讯干货提炼助手" in p_sv
+
+        # Check general template defaults to general
+        p_gen = SummarizationProcessor._select_system_prompt(doc, "general")
+        assert "专业的内容总结助手" in p_gen
