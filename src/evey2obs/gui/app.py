@@ -219,11 +219,17 @@ class App(tk.Tk):
             )
             self._reload_settings(new_settings)
             wizard.destroy()
-            self._build_main_view()
 
+        def _on_wizard_close():
+            wizard.destroy()
+
+        wizard.protocol("WM_DELETE_WINDOW", _on_wizard_close)
         ttk.Button(done, text="开始使用", command=_finish).pack(pady=30)
 
         self.wait_window(wizard)
+        if not self._bridge:
+            self._init_bridge()
+            self._build_main_view()
 
     # ══════════════════════════════════════════════════════════════════════
     # SETTINGS DIALOG
@@ -567,6 +573,28 @@ class App(tk.Tk):
                 messagebox.showinfo("提示", "未找到导出的笔记文件", parent=self)
         else:
             messagebox.showinfo("提示", "当前任务尚未生成 Obsidian 笔记", parent=self)
+
+    def _open_source(self) -> None:
+        url = getattr(self, "_current_source_url", None)
+        if url:
+            if url.startswith(("http://", "https://")):
+                import webbrowser
+                webbrowser.open(url)
+            elif Path(url).exists():
+                _open_file(url)
+            return
+
+        sel = self._tree.selection()
+        if sel and self._bridge:
+            doc, _ = self._bridge.get_result(sel[0])
+            if doc and doc.source_url:
+                if doc.source_url.startswith(("http://", "https://")):
+                    import webbrowser
+                    webbrowser.open(doc.source_url)
+                elif Path(doc.source_url).exists():
+                    _open_file(doc.source_url)
+                return
+        messagebox.showinfo("提示", "当前任务无可用原文链接或文件", parent=self)
 
     def _open_pending_exports(self) -> None:
         if not self._bridge:
